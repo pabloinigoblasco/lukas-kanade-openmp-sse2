@@ -4,7 +4,8 @@
 #include <cv.h>
 #include <highgui.h>
 #include <math.h>
-#include "Contadorciclos.h"
+#include "contadorciclos.h"
+
 
 /* This is just an inline that allocates images.  I did this to reduce clutter in the
 * actual computer vision algorithmic code.  Basically it allocates the requested image

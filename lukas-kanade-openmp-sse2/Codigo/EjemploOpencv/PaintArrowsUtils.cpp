@@ -73,8 +73,8 @@ void PaintPoint(CvPoint p,CvPoint q,IplImage& windowBackground,int line_thicknes
 	double hypotenuse;	hypotenuse = sqrt( square(p.y - q.y) + square(p.x - q.x) );
 
 	/* Here we lengthen the arrow by a factor of three. */
-	q.x = (int) (p.x - 3 * hypotenuse * cos(angle));
-	q.y = (int) (p.y - 3 * hypotenuse * sin(angle));
+	q.x = (int) (p.x -  hypotenuse * cos(angle));
+	q.y = (int) (p.y -  hypotenuse * sin(angle));
 
 	/* Now we draw the main line of the arrow. */
 	/* "windowBackground" is the frame to draw on.
