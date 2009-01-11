@@ -124,7 +124,7 @@
 			Name="Debug|Win32"
 			OutputDirectory="$(TEMP)\opencv.build\$(ProjectName)_$(ConfigurationName).$(PlatformName)"
 			IntermediateDirectory="$(OutDir)"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -182,26 +182,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="cxcored.lib"
-				OutputFile="..\..\bin\cv110d.dll"
-				LinkIncremental="2"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib"
-				IgnoreDefaultLibraryNames="libmmdd.lib"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="..\..\bin/cv110d.pdb"
-				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary="../../lib/cvd.lib"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -213,9 +197,6 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
