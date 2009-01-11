@@ -25,6 +25,8 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description=""
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -87,6 +89,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -167,6 +170,10 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{204E2D54-C28A-43B7-9618-3EB8DC7D83D1}"
+			RelativePathToProject=".\cv\src\cv.vs2005.no_openmp.vcproj"
+		/>
 	</References>
 	<Files>
 		<Filter
