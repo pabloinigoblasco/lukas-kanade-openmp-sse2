@@ -42,7 +42,8 @@
 #include <float.h>
 #include <stdio.h>
 
-#define EN_ASM_8 1
+//#define EN_ASM_8
+#define EN_ASM_7
 
 static void
 intersect_paa( CvPoint2D32f pt, CvSize win_size, CvSize imgSize,
@@ -545,7 +546,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                         const float* ix = Ix +
                             (y + minJ.y - minI.y)*(isz.width-2) + minJ.x - minI.x;
                         const float* iy = Iy + (ix - Ix);
-
+#ifndef EN_ASM_7
                         for( x = 0; x < jsz.width; x++ )//LN4
                         {
                             double t = pi[x] - pj[x];
@@ -555,6 +556,146 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                             Gxy += ix[x] * iy[x];
                             Gyy += iy[x] * iy[x];
                         }
+#else
+						__asm{
+							mov ebx, jsz.width
+							shr ebx, 2 //Divide by 4 to get the number of iterations to optimize
+							shl ebx, 4 //Multiply by 16 to get the number of bytes to process
+							           //4 floats per iteration (16 bytes per iteration)
+							mov edx, jsz.width
+							shl edx, 2 //Total number of bytes to process
+							mov ecx, 0h//counter. Bytes processed
+						ln4_muchmult_opt:
+							cmp ecx, ebx
+							jge ln4_muchmult_norm //If ecx >= ebx go to normal iterations
+							// double t = pi[x] - pj[x]; xmm0 is t1,t2,t3,t4
+							lea esi, pi
+							add esi, ecx
+							movaps xmm0, esi
+							lea esi, pj
+							add esi, ecx
+							movaps xmm1, esi
+							subps xmm0, xmm1 //xmmo is t
+							// bx += (double) (t * ix[x]);
+							lea esi, ix
+							add esi, ecx
+							movaps xmm1, esi //xmm1 <- pi[x]
+							mulps xmm1, xmm0
+							movaps xmm3, xmm1
+							shufps xmm3, xmm1, 01bh//00011011
+							addps xmm1, xmm3
+							movaps xmm3, xmm1
+							shufps xmm3, xmm1, 0b1h//10110001
+							addps xmm1, xmm3
+							cvtss2sd xmm1, xmm1
+							addsd xmm1, bx
+							movsd bx, xmm1
+							//4
+							movaps xmm1, esi
+							mulps xmm1, xmm1
+							movaps xmm3, xmm1
+							shufps xmm3, xmm1, 01bh
+							addps xmm1, xmm3
+							movaps xmm3, xmm1
+							shufps xmm3, xmm1, 0b1h
+							addps xmm1, xmm3
+							addss xmm1, Gxx
+							movss Gxx, xmm1
+							//3
+							lea esi, iy
+							add esi, ecx
+							movaps xmm2, esi
+							mulps xmm2, xmm0
+							movaps xmm3, xmm2
+							shufps xmm3, xmm2, 01bh
+							addps xmm2, xmm3
+							movaps xmm3, xmm2
+							shufps xmm3, xmm2, 0b1h
+							addps xmm2, xmm3
+							cvtss2sd xmm2, xmm2
+							addsd xmm2, by
+							movsd by, xmm2
+							//6
+							movaps xmm2, esi
+							mulps xmm2, xmm2
+							movaps xmm3, xmm2
+							shufps xmm3, xmm2, 01bh
+							addps xmm2, xmm3
+							movaps xmm3, xmm2
+							shufps xmm3, xmm2, 0b1h
+							addps xmm2, xmm3
+							addss xmm2, Gyy
+							movss Gyy, xmm2
+							//5
+							lea esi, ix
+							add esi, ecx
+							movaps xmm1, esi
+							lea esi, iy
+							add esi, ecx
+							movaps xmm2, esi
+							mulps xmm1, xmm2
+							movaps xmm2, xmm1
+							shufps xmm2, xmm1, 01bh
+							addps xmm1, xmm2
+							movaps xmm2, xmm1
+							shufps xmm2, xmm1, 0b1h
+							addps xmm1, xmm2
+							addss xmm1, Gyy
+							movss Gyy, xmm1
+							add ecx, 16
+							jmp ln4_muchmult_opt
+						ln4_muchmult_norm:
+							cmp ecx, edx
+							jge ln4_muchmult_fin //If ecx >= ebx go to normal iterations
+							//1
+							lea esi, pi
+							add esi, ecx
+							movss xmm0, esi
+							lea esi, pj
+							add esi, ecx
+							movss xmm1, esi
+							subss xmm0, xmm1 //xmmo is t
+							//2
+							lea esi, ix
+							add esi, ecx
+							movss xmm1, esi
+							mulss xmm1, xmm0
+							cvtss2sd xmm1, xmm1
+							addsd xmm1, bx
+							movsd bx, xmm1
+							//4
+							movss xmm1, esi
+							mulss xmm1, xmm1
+							addss xmm1, Gxx
+							movss Gxx, xmm1
+							//3
+							lea esi, iy
+							add esi, ecx
+							movss xmm2, esi
+							mulss xmm2, xmm0
+							cvtss2sd xmm2, xmm2
+							addss xmm2, by
+							movsd by, xmm2
+							//6
+							movaps xmm2, esi
+							mulss xmm2, xmm2
+							addss xmm2, Gyy
+							movss Gyy, xmm2
+							//5
+							lea esi, ix
+							add esi, ecx
+							movss xmm1, esi
+							lea esi, iy
+							add esi, ecx
+							movss xmm2, esi
+							mulss xmm1, xmm2
+							addss xmm1, Gyy
+							movss Gyy, xmm1
+							add ecx, 4
+							jmp ln4_muchmult_norm
+						ln4_muchmult_fin:
+						}
+#endif
                     }
 
                     D = Gxx * Gyy - Gxy * Gxy;
@@ -609,7 +750,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                         const float * pj = patchJ + y*jsz.width;
 #ifndef EN_ASM_8
 						for( x = 0; x < jsz.width; x++ ) {//LN4
-							t = pi[x] - pj[x];
+							float t = pi[x] - pj[x];
 							err += t * t;
 						}
 #else
@@ -632,16 +773,16 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 						    add esi, ecx
 							movaps xmm2, esi //Load 4 floats from pj
 							subps xmm1, xmm2 //4 subs
-							mulps xmm1, xmm1 //(pi[x]-pj[x])^2 four times
+							mulps xmm1, xmm1 //(pi[x]-pj[x])^2 four numbers
 							movaps xmm2, xmm1
-							shufps xmm2, xmm1, 0e4h//1110 0100
+							shufps xmm2, xmm1, 01bh//1110 0100
 							addps xmm1, xmm2
 							movaps xmm2, xmm1
-							shufps xmm2, xmm1, 0b1h//1011 0001
+							shufps xmm2, xmm1, 0b1h//1011 0001 (ab ba)
 							addps xmm1, xmm2 //each component of xmm1 is (t1^2 + t2^2 + t3^2 + t4^2)
 							cvtss2sd xmm1, xmm1
-							addsd xmm3, err
-							movsd err, xmm4
+							addsd xmm1, err
+							movsd err, xmm1
 							add ecx, 16  //We have processed 16 bytes in this round
 							jmp ln4_err_opt //Goto loop again
 						//non-optimized loop
