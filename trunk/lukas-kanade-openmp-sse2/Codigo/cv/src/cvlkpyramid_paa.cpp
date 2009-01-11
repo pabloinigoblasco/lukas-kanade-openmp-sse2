@@ -610,22 +610,23 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 						}
 #else
 						__asm{
-							mov eax, jsz.width
-							mov edx, 0
-							mov ebx, 4
-							idiv ebx
-							mov ebx, eax //ebx is the number of iterations
-							mov ecx, 0h//Iteration counter
+							mov ebx, jsz.width
+							shr ebx, 2 //Divide by 4 to get the number of iterations to optimize
+							shl ebx, 4 //Multiply by 16 to get the number of bytes to process
+							           //4 floats per iteration (16 bytes per iteration)
+							mov edx, jsz.width
+							shl edx, 2 //Total number of bytes to process
+							mov ecx, 0h//counter. Bytes processed
 						//Optimized loop from 0 to jsz.width/4
 						ln4_err_opt:
 							cmp ecx, ebx
 							jge ln4_err_norm //If ecx >= ebx go to normal iterations
-							lea edx, pi    //load pi array address
-							add edx, ecx   //add counter to offset
-							movaps xmm1, [edx] //load 4 floats from pi
-							lea edx, pj
-						    add edx, ecx
-							movaps xmm2, [edx] //Load 4 floats from pj
+							lea esi, pi    //load pi array address
+							add esi, ecx   //add counter to address
+							movaps xmm1, esi //load 4 floats from pi
+							lea esi, pj
+						    add esi, ecx
+							movaps xmm2, esi //Load 4 floats from pj
 							subps xmm1, xmm2 //4 subs
 							mulps xmm1, xmm1 //(pi[x]-pj[x])^2 four times
 							movaps xmm2, xmm1
@@ -633,30 +634,28 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 							addps xmm1, xmm2
 							movaps xmm2, xmm1
 							shufps xmm2, xmm1, 0b1h//1011 0001
-							addps xmm1, xmm2 //each component of xmm1 is t1^2 + t2^2 + t3^2 + t4^2
-							xorps xmm3, xmm3 //xmm3<-0
-							movss xmm3, xmm1 //xmm3[3]<-xmm1[3]
+							addps xmm1, xmm2 //each component of xmm1 is (t1^2 + t2^2 + t3^2 + t4^2)
+							cvtss2sd xmm1, xmm1
 							addsd xmm3, err
 							movsd err, xmm4
-							inc ecx
+							add ecx, 16  //We have processed 16 bytes in this round
 							jmp ln4_err_opt //Goto loop again
 						//non-optimized loop
 						ln4_err_norm:
-							cmp ecx, jsz.width
+							cmp ecx, edx
 							jge ln4_err_fin
-							mov edx, pi    //load pi array address
-							add edx, ecx   //add counter to offset
-							movss xmm1, [edx] //load 1 floats from pi
-							mov edx, pj
-						    add edx, ecx
-							movss xmm2, [edx] //Load 1 floats from pj
+							lea esi, pi    //load pi array address
+							add esi, ecx   //add counter to address
+							movss xmm1, esi //load 1 floats from pi
+							lea esi, pj
+						    add esi, ecx
+							movss xmm2, esi //Load 1 floats from pj
 							subss xmm1, xmm2 //1 subs
 							mulss xmm1, xmm1 //(pi[x]-pj[x])^2
-							xorps xmm3, xmm3 //xmm3<-0
-							movss xmm3, xmm1 //xmm3[3]<-xmm1[3]
-							addsd xmm3, err
-							movsd err, xmm4
-							inc ecx
+							cvtss2sd xmm1, xmm1
+							addsd xmm1, err
+							movsd err, xmm1
+							add ecx, 4 //Add the number of processed bytes
 							jmp ln4_err_norm
 						//Fin de bucle
 						ln4_err_fin:
