@@ -42,6 +42,8 @@
 #include <float.h>
 #include <stdio.h>
 
+#define EN_ASM_8 1
+
 static void
 intersect( CvPoint2D32f pt, CvSize win_size, CvSize imgSize,
            CvPoint* min_pt, CvPoint* max_pt )
@@ -64,10 +66,13 @@ intersect( CvPoint2D32f pt, CvSize win_size, CvSize imgSize,
 }
 
 
+
 static int icvMinimalPyramidSize( CvSize imgSize )
 {
     return cvAlign(imgSize.width,8) * imgSize.height / 3;
 }
+
+
 
 
 static void
@@ -76,7 +81,7 @@ icvInitPyramidalAlgorithm( const CvMat* imgA, const CvMat* imgB,
                            int level, CvTermCriteria * criteria,
                            int max_iters, int flags,
                            uchar *** imgI, uchar *** imgJ,
-                           int **step, CvSize** size,
+						   int **step, CvSize** size,
                            double **scale, uchar ** buffer )
 {
     CV_FUNCNAME( "icvInitPyramidalAlgorithm" );
@@ -221,9 +226,12 @@ icvInitPyramidalAlgorithm( const CvMat* imgA, const CvMat* imgB,
 }
 
 
+
+
 /* compute dI/dx and dI/dy */
+/*PAA version*/
 static void
-icvCalcIxIy_32f( const float* src, int src_step, float* dstX, float* dstY, int dst_step,
+icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, int dst_step,
                  CvSize src_size, const float* smooth_k, float* buffer0 )
 {
     int src_width = src_size.width, dst_width = src_size.width-2;
@@ -233,6 +241,7 @@ icvCalcIxIy_32f( const float* src, int src_step, float* dstX, float* dstY, int d
     src_step /= sizeof(src[0]);
     dst_step /= sizeof(dstX[0]);
 
+	//TODO: Optimize this?
     for( ; height--; src += src_step, dstX += dst_step, dstY += dst_step )
     {
         const float* src2 = src + src_step;
@@ -254,6 +263,9 @@ icvCalcIxIy_32f( const float* src, int src_step, float* dstX, float* dstY, int d
     }
 }
 
+
+
+/*PAA version*/
 CV_IMPL void
 cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                         void* pyrarrA, void* pyrarrB,
@@ -263,6 +275,10 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                         char *status, float *error,
                         CvTermCriteria criteria, int flags )
 {
+	///////////////////////////////////////////////////////////
+	//Var decl and initialization
+	///////////////////////////////////////////////////////////
+
     uchar *pyrBuffer = 0;
     uchar *buffer = 0;
     float* _error = 0;
@@ -270,7 +286,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 
     void* ipp_optflow_state = 0;
     
-    CV_FUNCNAME( "cvCalcOpticalFlowPyrLK" );
+    CV_FUNCNAME( "cvCalcOpticalFlowPyrLK_paa" );
 
     __BEGIN__;
 
@@ -306,13 +322,13 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
     CV_CALL( imgB = cvGetMat( imgB, &stubB ));
 
     if( CV_MAT_TYPE( imgA->type ) != CV_8UC1 )
-        CV_ERROR( CV_StsUnsupportedFormat, "" );
+        CV_ERROR( CV_StsUnsupportedFormat, "Image type not supported" );
 
     if( !CV_ARE_TYPES_EQ( imgA, imgB ))
-        CV_ERROR( CV_StsUnmatchedFormats, "" );
+        CV_ERROR( CV_StsUnmatchedFormats, "images have different format" );
 
     if( !CV_ARE_SIZES_EQ( imgA, imgB ))
-        CV_ERROR( CV_StsUnmatchedSizes, "" );
+        CV_ERROR( CV_StsUnmatchedSizes, "Images have different size" );
 
     if( imgA->step != imgB->step )
         CV_ERROR( CV_StsUnmatchedSizes, "imgA and imgB must have equal steps" );
@@ -344,7 +360,8 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
         pyrB = &pstubB;
         pyrB->data.ptr = 0;
     }
-
+	
+	//count -> Number of tracked points. Number of points of the images (pixel count??)
     if( count == 0 )
         EXIT;
 
@@ -371,6 +388,8 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
     bufferBytes = (srcPatchLen + patchLen * 3) * sizeof( _patchI[0][0] ) * threadCount;
     CV_CALL( buffer = (uchar*)cvAlloc( bufferBytes ));
 
+	//Some kind of buffer initiallization to give each thread a piece of these
+	//Pyramid buffer??
     for( i = 0; i < threadCount; i++ )
     {
         _patchI[i] = i == 0 ? (float*)buffer : _Iy[i-1] + patchLen;
@@ -386,6 +405,10 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
     if( !(flags & CV_LKFLOW_INITIAL_GUESSES) )
         memcpy( featuresB, featuresA, count*sizeof(featuresA[0]));
 
+	///////////////////////////////////////////////////////////
+	//Image processing
+	///////////////////////////////////////////////////////////
+
     /* do processing from top pyramid level (smallest image)
        to the bottom (original image) */
     for( l = level; l >= 0; l-- )
@@ -393,12 +416,13 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
         CvSize levelSize = size[l];
         int levelStep = step[l];
 
-        {
+        
 #ifdef _OPENMP
         #pragma omp parallel for num_threads(threadCount) schedule(dynamic) 
 #endif // _OPENMP
         /* find flow for each given point */
-        for( i = 0; i < count; i++ )
+		//************** Point processing loop START **************
+        for( i = 0; i < count; i++ ) //LN1
         {
             CvPoint2D32f v;
             CvPoint minI, maxI, minJ, maxJ;
@@ -409,6 +433,8 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
             double Gxx = 0, Gxy = 0, Gyy = 0, D = 0, minEig = 0;
             float prev_mx = 0, prev_my = 0;
             int j, x, y;
+			//Looks like this gets his thread number and works over a piece of data
+			//of the complete set
             int threadIdx = cvGetThreadNum();
             float* patchI = _patchI[threadIdx];
             float* patchJ = _patchJ[threadIdx];
@@ -418,12 +444,12 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
             v.x = featuresB[i].x;
             v.y = featuresB[i].y;
             if( l < level )
-            {
+            { //If is not the last level (simple images)
                 v.x += v.x;
                 v.y += v.y;
             }
             else
-            {
+            { //If it is the last level (original image)
                 v.x = (float)(v.x * scale[l]);
                 v.y = (float)(v.y * scale[l]);
             }
@@ -451,10 +477,11 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                 continue;
             }
 
-            icvCalcIxIy_32f( patchI, isz.width*sizeof(patchI[0]), Ix, Iy,
+			//Calcula el gradiente de intensidad en x e y
+            icvCalcIxIy_32f_paa( patchI, isz.width*sizeof(patchI[0]), Ix, Iy,
                 (isz.width-2)*sizeof(patchI[0]), isz, smoothKernel, patchJ );
 
-            for( j = 0; j < criteria.max_iter; j++ )
+            for( j = 0; j < criteria.max_iter; j++ ) //LN2
             {
                 double bx = 0, by = 0;
                 float mx, my;
@@ -485,8 +512,9 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                 if( maxJ.x == prev_maxJ.x && maxJ.y == prev_maxJ.y &&
                     minJ.x == prev_minJ.x && minJ.y == prev_minJ.y )
                 {
-                    for( y = 0; y < jsz.height; y++ )
+                    for( y = 0; y < jsz.height; y++ )//LN3
                     {
+						//Why it uses const???
                         const float* pi = patchI +
                             (y + minJ.y - minI.y + 1)*isz.width + minJ.x - minI.x + 1;
                         const float* pj = patchJ + y*jsz.width;
@@ -494,7 +522,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                             (y + minJ.y - minI.y)*(isz.width-2) + minJ.x - minI.x;
                         const float* iy = Iy + (ix - Ix);
 
-                        for( x = 0; x < jsz.width; x++ )
+                        for( x = 0; x < jsz.width; x++ )//LN4
                         {
                             double t0 = pi[x] - pj[x];
                             bx += t0 * ix[x];
@@ -505,7 +533,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                 else
                 {
                     Gxx = Gyy = Gxy = 0;
-                    for( y = 0; y < jsz.height; y++ )
+                    for( y = 0; y < jsz.height; y++ )//LN3
                     {
                         const float* pi = patchI +
                             (y + minJ.y - minI.y + 1)*isz.width + minJ.x - minI.x + 1;
@@ -514,7 +542,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                             (y + minJ.y - minI.y)*(isz.width-2) + minJ.x - minI.x;
                         const float* iy = Iy + (ix - Ix);
 
-                        for( x = 0; x < jsz.width; x++ )
+                        for( x = 0; x < jsz.width; x++ )//LN4
                         {
                             double t = pi[x] - pj[x];
                             bx += (double) (t * ix[x]);
@@ -563,32 +591,85 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 
             featuresB[i] = v;
             status[i] = (char)pt_status;
-            if( l == 0 && error && pt_status )
-            {
+            if( l == 0 && error && pt_status ) {
+
                 /* calc error */
                 double err = 0;
-                if( flags & CV_LKFLOW_GET_MIN_EIGENVALS )
+				if( flags & CV_LKFLOW_GET_MIN_EIGENVALS ) {
                     err = minEig;
-                else
-                {
-                    for( y = 0; y < jsz.height; y++ )
-                    {
-                        const float* pi = patchI +
-                            (y + minJ.y - minI.y + 1)*isz.width + minJ.x - minI.x + 1;
-                        const float* pj = patchJ + y*jsz.width;
+				} else {
 
-                        for( x = 0; x < jsz.width; x++ )
-                        {
-                            double t = pi[x] - pj[x];
-                            err += t * t;
-                        }
-                    }
+					for( y = 0; y < jsz.height; y++ ) {//LN3 
+
+                        const float * pi = patchI + (y + minJ.y - minI.y + 1)*isz.width + minJ.x - minI.x + 1;
+                        const float * pj = patchJ + y*jsz.width;
+#ifndef EN_ASM_8
+						for( x = 0; x < jsz.width; x++ ) {//LN4
+							t = pi[x] - pj[x];
+							err += t * t;
+						}
+#else
+						__asm{
+							mov eax, jsz.width
+							mov edx, 0
+							mov ebx, 4
+							idiv ebx
+							mov ebx, eax //ebx is the number of iterations
+							mov ecx, 0h//Iteration counter
+						//Optimized loop from 0 to jsz.width/4
+						ln4_err_opt:
+							cmp ecx, ebx
+							jge ln4_err_norm //If ecx >= ebx go to normal iterations
+							lea edx, pi    //load pi array address
+							add edx, ecx   //add counter to offset
+							movaps xmm1, [edx] //load 4 floats from pi
+							lea edx, pj
+						    add edx, ecx
+							movaps xmm2, [edx] //Load 4 floats from pj
+							subps xmm1, xmm2 //4 subs
+							mulps xmm1, xmm1 //(pi[x]-pj[x])^2 four times
+							movaps xmm2, xmm1
+							shufps xmm2, xmm1, 0e4h//1110 0100
+							addps xmm1, xmm2
+							movaps xmm2, xmm1
+							shufps xmm2, xmm1, 0b1h//1011 0001
+							addps xmm1, xmm2 //each component of xmm1 is t1^2 + t2^2 + t3^2 + t4^2
+							xorps xmm3, xmm3 //xmm3<-0
+							movss xmm3, xmm1 //xmm3[3]<-xmm1[3]
+							addsd xmm3, err
+							movsd err, xmm4
+							inc ecx
+							jmp ln4_err_opt //Goto loop again
+						//non-optimized loop
+						ln4_err_norm:
+							cmp ecx, jsz.width
+							jge ln4_err_fin
+							mov edx, pi    //load pi array address
+							add edx, ecx   //add counter to offset
+							movss xmm1, [edx] //load 1 floats from pi
+							mov edx, pj
+						    add edx, ecx
+							movss xmm2, [edx] //Load 1 floats from pj
+							subss xmm1, xmm2 //1 subs
+							mulss xmm1, xmm1 //(pi[x]-pj[x])^2
+							xorps xmm3, xmm3 //xmm3<-0
+							movss xmm3, xmm1 //xmm3[3]<-xmm1[3]
+							addsd xmm3, err
+							movsd err, xmm4
+							inc ecx
+							jmp ln4_err_norm
+						//Fin de bucle
+						ln4_err_fin:
+						}
+#endif
+					}
                     err = sqrt(err);
                 }
                 error[i] = (float)err;
             }
-        } // end of point processing loop (i)
         }
+		//************** Point processing loop End **************
+        
     } // end of pyramid levels loop (l)
 
     __END__;
