@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="opencv.vs2005">
+</Property><Property Name="Archivo de la solución" Value="C:\Documents and Settings\mangelp\Escritorio\ocv\Codigo\opencv.vs2005.sln">
+</Property><Property Name="Date" Value="sábado, 10 de enero de 2009">
+</Property><Property Name="Time" Value="20:44:52">
+</Property></Properties><Event ErrorLevel="0" Project="cv.vs2005.no_openmp" Source="cv\src\cv.vs2005.no_openmp.vcproj" Description="Ya no se permite la implementación web en el servidor de IIS local. La herramienta de compilación de implementación web se ha quitado de la configuración del proyecto.">
+</Event><Event ErrorLevel="1" Project="cv.vs2005.no_openmp" Source="cv\src\cv.vs2005.no_openmp.vcproj" Description="Esta aplicación se ha actualizado para incluir la configuración relacionada con la característica Control de cuentas de usuario (UAC) de Windows Vista. De manera predeterminada, cuando se ejecuta en Windows Vista con el Control de cuentas de usuario habilitado, la aplicación está marcada para que se ejecute con los mismos privilegios que el proceso que la inició y para que no pueda ejecutarse con virtualización. Puede cambiar la configuración relativa al Control de cuentas de usuario desde las páginas de propiedades del proyecto.">
+</Event><Event ErrorLevel="0" Project="cv.vs2005.no_openmp" Source="cv\src\cv.vs2005.no_openmp.vcproj" Description="Proyecto actualizado correctamente.">
+</Event><Event ErrorLevel="3" Project="cv.vs2005.no_openmp" Source="cv\src\cv.vs2005.no_openmp.vcproj" Description="Converted">
+</Event></UpgradeLog>
