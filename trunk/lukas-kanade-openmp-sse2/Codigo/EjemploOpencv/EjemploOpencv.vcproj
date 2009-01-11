@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;C:\Archivos de programa\OpenCV\cvaux\include&quot;;&quot;C:\Documents and Settings\mangelp\Escritorio\ocv\Codigo\cv\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(SolutionDir)\cv\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
