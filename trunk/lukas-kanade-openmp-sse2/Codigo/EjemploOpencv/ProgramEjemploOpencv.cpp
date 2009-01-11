@@ -68,19 +68,29 @@ void PyramidLK(IplImage& frameA, IplImage& frameB,CvPoint2D32f frameA_features[]
 
 	Cronometro c1,c2;
 	
-	c1.Start();
-	cvCalcOpticalFlowPyrLK(&frameA, &frameB, pyramid1, pyramid2, frameA_features, frameB_features, 
-		number_of_features, optical_flow_window, level, optical_flow_found_feature, optical_flow_feature_error, 
-		optical_flow_termination_criteria, 0 );
-	c1.Stop();
-	c1.PrintTime("Tiempo que ha tardado en ejecutarse el algoritmo piramidal de opencv para esta imagen");
+	int numeroRepeticiones=20;
+	for(int i=0;i<numeroRepeticiones;i++)
+	{
+		c1.Start();
+		cvCalcOpticalFlowPyrLK(&frameA, &frameB, pyramid1, pyramid2, frameA_features, frameB_features, 
+			number_of_features, optical_flow_window, level, optical_flow_found_feature, optical_flow_feature_error, 
+			optical_flow_termination_criteria, 0 );
+		c1.Stop();
+		c1.Reset();
+	}
+	c1.PrintMinimumTime("Tiempo mínimo del LKpyramid clásico");
 
-	c2.Start();
-	cvCalcOpticalFlowPyrLK_paa(&frameA, &frameB, pyramid1, pyramid2, frameA_features, frameB_features, 
-		number_of_features, optical_flow_window, level, optical_flow_found_feature, optical_flow_feature_error, 
-		optical_flow_termination_criteria, 0 );
-	c2.Stop();
-	c1.PrintTime("Tiempo que ha tardado en ejecutarse el algoritmo piramidal mejorado para esta imagen");	
+	for(int i=0;i<numeroRepeticiones;i++)
+	{
+		c2.Start();
+		cvCalcOpticalFlowPyrLK_paa(&frameA, &frameB, pyramid1, pyramid2, frameA_features, frameB_features, 
+			number_of_features, optical_flow_window, level, optical_flow_found_feature, optical_flow_feature_error, 
+			optical_flow_termination_criteria, 0 );
+
+		c2.Stop();
+		c2.Reset();
+	}
+	c2.PrintMinimumTime("Tiempo mínimo del LKpyramid moderno");
 
 	cvReleaseImage(&pyramid1);
 	cvReleaseImage(&pyramid2);
@@ -99,7 +109,7 @@ int EjemploDosFrames(void)
 
     imgA = cvLoadImage("imageA.bmp", true);
     imgB = cvLoadImage("imageB.bmp", true);
-	
+
 	CvSize size = cvGetSize(imgA);
 	g.Initialize(size);
 
@@ -129,9 +139,7 @@ int EjemploDosFrames(void)
 		PyramidLK(*grayA,*grayB,frame1_features,frame2_features,number_of_features,3,5);
 
 		g.Refresh(*grayA);      
-		//cvCopyImage(imgA,&g.GetWindowBackground());
-
-		cvOr(imgA,imgB,&g.GetWindowBackground());
+		cvCopyImage(imgA,&g.GetWindowBackground());
 
 		PintarLK(*velx,*vely,g.GetWindowBackground());
 		PintarPiramide(number_of_features,frame1_features,frame2_features,g.GetWindowBackground());

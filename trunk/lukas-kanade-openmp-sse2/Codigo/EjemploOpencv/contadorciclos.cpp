@@ -2,6 +2,8 @@
 
 Cronometro::Cronometro()
 {
+	((unsigned int*)(&minimumTime))[0]= 9999999;
+	((unsigned int*)(&minimumTime))[1]= 9999999;
 	Reset();
 }
 
@@ -70,16 +72,25 @@ Cronometro::Stop()
 	LeerCiclos(&now);
 
 	RestarCiclos(&result,&now,&startTime);
+
+	
+	if(result.HighPart<minimumTime.HighPart)
+		minimumTime=result;
+	if(result.HighPart==minimumTime.HighPart)
+	{
+		if(result.LowPart<minimumTime.LowPart)
+			minimumTime=result;
+	}
 }
 
 void
 Cronometro::Reset()
 {
-	((int*)(&startTime))[0]=0;
-	((int*)(&startTime))[1]=0;
+	((unsigned int*)(&startTime))[0]=0;
+	((unsigned int*)(&startTime))[1]=0;
 
-	((int*)(&result))[0]=0;
-	((int*)(&result))[1]=0;
+	((unsigned int*)(&result))[0]=0;
+	((unsigned int*)(&result))[1]=0;
 }
 
 void 
@@ -92,4 +103,16 @@ void
 Cronometro:: PrintCycles(const char* message)
 {
 	ImprimirCiclos(message,&result);
+}
+
+void 
+Cronometro::PrintMinimumTime(const char* message)
+{
+	ImprimirTiempo(message,&minimumTime);
+}
+
+void 
+Cronometro::PrintMinimumCycles(const char* message)
+{
+	ImprimirCiclos(message,&minimumTime);
 }

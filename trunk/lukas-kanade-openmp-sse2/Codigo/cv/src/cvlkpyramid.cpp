@@ -1353,5 +1353,3 @@ cvEstimateRigidTransform( const CvArr* _A, const CvArr* _B, CvMat* _M, int full_
     return result;
 }
 
-
-/* End of file. */

@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="cv.lib cvaux.lib cxcore.lib highgui.lib"
+				AdditionalDependencies="cvaux.lib cxcore.lib highgui.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
