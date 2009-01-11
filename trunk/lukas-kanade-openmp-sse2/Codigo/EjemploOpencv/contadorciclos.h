@@ -2,8 +2,21 @@
 #include <stdio.h>
 #define FREC_GHZ (3.01)//Colocar la frecuencia de vuestro procesador
 
+class Cronometro
+{
+	private:
+		LARGE_INTEGER startTime;
+		LARGE_INTEGER result;
 
-void inline LeerCiclos (LARGE_INTEGER *cic);
-void inline ImprimirCiclos (const char *pc, LARGE_INTEGER *cic);
-void inline ImprimirTiempo (const char *pc, LARGE_INTEGER *cic);
-void inline RestarCiclos (LARGE_INTEGER *c_dif, LARGE_INTEGER *c_final, LARGE_INTEGER *c_inic);
+		void LeerCiclos (LARGE_INTEGER *cic);
+		void ImprimirCiclos (const char *pc, LARGE_INTEGER *cic);
+		void ImprimirTiempo (const char *pc, LARGE_INTEGER *cic);
+		void RestarCiclos (LARGE_INTEGER *c_dif, LARGE_INTEGER *c_final, LARGE_INTEGER *c_inic);
+	public:
+		Cronometro();
+		void Start();
+		void Stop();
+		void Reset();
+		void PrintTime(const char* message);
+		void PrintCycles(const char* message);
+};
