@@ -1,5 +1,6 @@
 #include "common.h"
 #include "video.h"
+#include "gui.h"
 
 void PyramidLK(IplImage& frameA, IplImage& frameB,CvPoint2D32f frameA_features[],CvPoint2D32f frameB_features[],
 			   int number_of_features, int windowsSize,int level )
@@ -71,33 +72,6 @@ void PyramidLK(IplImage& frameA, IplImage& frameB,CvPoint2D32f frameA_features[]
 	cvReleaseImage(&pyramid2);
 }
 
-class GUI
-{
-private:
-	IplImage* windowBackground;
-public:
-	
-	IplImage GetWindowBackground()
-	{
-		return *windowBackground;
-	}
-	void Initialize(CvSize size)
-	{
-		windowBackground=NULL;
-		allocateOnDemand( &windowBackground, size, IPL_DEPTH_8U, 3 );
-		cvNamedWindow("Optical Flow", CV_WINDOW_AUTOSIZE);
-	}
-	void Refresh()
-	{
-		cvShowImage("Optical Flow", windowBackground);     
-	}
-
-	void Refresh(IplImage& background)
-	{
-		cvConvertImage(&background,windowBackground,CV_GRAY2RGB);
-		cvShowImage("Optical Flow", windowBackground);     
-	}	
-};
 
 int EjemploDosFrames(void)
 {

@@ -25,7 +25,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description=""
 				CommandLine=""
 			/>
 			<Tool
@@ -182,6 +181,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\contadorciclos.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\PaintArrowsUtils.cpp"
 				>
 			</File>
@@ -195,6 +198,18 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\common.h"
+				>
+			</File>
+			<File
+				RelativePath=".\contadorciclos.h"
+				>
+			</File>
+			<File
+				RelativePath=".\gui.h"
+				>
+			</File>
 			<File
 				RelativePath=".\video.h"
 				>
