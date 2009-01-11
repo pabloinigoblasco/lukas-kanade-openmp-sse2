@@ -497,6 +497,20 @@ CVAPI(void)  cvCalcOpticalFlowPyrLK( const CvArr*  prev, const CvArr*  curr,
                                      CvTermCriteria criteria,
                                      int       flags );
 
+/**
+ Tweaked version with sse inline optimization
+ */
+CVAPI(void)  cvCalcOpticalFlowPyrLK_paa( const CvArr*  prev, const CvArr*  curr,
+                                     CvArr*  prev_pyr, CvArr*  curr_pyr,
+                                     const CvPoint2D32f* prev_features,
+                                     CvPoint2D32f* curr_features,
+                                     int       count,
+                                     CvSize    win_size,
+                                     int       level,
+                                     char*     status,
+                                     float*    track_error,
+                                     CvTermCriteria criteria,
+                                     int       flags );
 
 /* Modification of a previous sparse optical flow algorithm to calculate
    affine flow */
