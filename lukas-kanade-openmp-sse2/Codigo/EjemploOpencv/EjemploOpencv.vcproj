@@ -212,6 +212,7 @@
 			</File>
 			<File
 				RelativePath=".\video.h"
+				DeploymentContent="true"
 				>
 			</File>
 		</Filter>

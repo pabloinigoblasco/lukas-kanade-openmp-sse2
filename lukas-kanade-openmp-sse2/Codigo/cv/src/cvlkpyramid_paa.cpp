@@ -45,7 +45,7 @@
 #define EN_ASM_8 1
 
 static void
-intersect( CvPoint2D32f pt, CvSize win_size, CvSize imgSize,
+intersect_paa( CvPoint2D32f pt, CvSize win_size, CvSize imgSize,
            CvPoint* min_pt, CvPoint* max_pt )
 {
     CvPoint ipt;
@@ -67,7 +67,8 @@ intersect( CvPoint2D32f pt, CvSize win_size, CvSize imgSize,
 
 
 
-static int icvMinimalPyramidSize( CvSize imgSize )
+static int 
+icvMinimalPyramidSize_paa( CvSize imgSize )
 {
     return cvAlign(imgSize.width,8) * imgSize.height / 3;
 }
@@ -75,8 +76,10 @@ static int icvMinimalPyramidSize( CvSize imgSize )
 
 
 
+
+
 static void
-icvInitPyramidalAlgorithm( const CvMat* imgA, const CvMat* imgB,
+icvInitPyramidalAlgorithm_paa( const CvMat* imgA, const CvMat* imgB,
                            CvMat* pyrA, CvMat* pyrB,
                            int level, CvTermCriteria * criteria,
                            int max_iters, int flags,
@@ -84,7 +87,7 @@ icvInitPyramidalAlgorithm( const CvMat* imgA, const CvMat* imgB,
 						   int **step, CvSize** size,
                            double **scale, uchar ** buffer )
 {
-    CV_FUNCNAME( "icvInitPyramidalAlgorithm" );
+    CV_FUNCNAME( "icvInitPyramidalAlgorithm_paa" );
 
     __BEGIN__;
 
@@ -228,6 +231,7 @@ icvInitPyramidalAlgorithm( const CvMat* imgA, const CvMat* imgB,
 
 
 
+
 /* compute dI/dx and dI/dy */
 /*PAA version*/
 static void
@@ -339,7 +343,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
     {
         CV_CALL( pyrA = cvGetMat( pyrA, &pstubA ));
 
-        if( pyrA->step*pyrA->height < icvMinimalPyramidSize( imgSize ) )
+        if( pyrA->step*pyrA->height < icvMinimalPyramidSize_paa( imgSize ) )
             CV_ERROR( CV_StsBadArg, "pyramid A has insufficient size" );
     }
     else
@@ -352,7 +356,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
     {
         CV_CALL( pyrB = cvGetMat( pyrB, &pstubB ));
 
-        if( pyrB->step*pyrB->height < icvMinimalPyramidSize( imgSize ) )
+        if( pyrB->step*pyrB->height < icvMinimalPyramidSize_paa( imgSize ) )
             CV_ERROR( CV_StsBadArg, "pyramid B has insufficient size" );
     }
     else
@@ -377,7 +381,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
     for( i = 0; i < threadCount; i++ )
         _patchI[i] = _patchJ[i] = _Ix[i] = _Iy[i] = 0;
 
-    CV_CALL( icvInitPyramidalAlgorithm( imgA, imgB, pyrA, pyrB,
+    CV_CALL( icvInitPyramidalAlgorithm_paa( imgA, imgB, pyrA, pyrB,
         level, &criteria, MAX_ITERS, flags,
         &imgI, &imgJ, &step, &size, &scale, &pyrBuffer ));
 
@@ -463,7 +467,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
             u.x = (float) (featuresA[i].x * scale[l]);
             u.y = (float) (featuresA[i].y * scale[l]);
 
-            intersect( u, winSize, levelSize, &minI, &maxI );
+            intersect_paa( u, winSize, levelSize, &minI, &maxI );
             isz = jsz = cvSize(maxI.x - minI.x + 2, maxI.y - minI.y + 2);
             u.x += (minI.x - (patchSize.width - maxI.x + 1))*0.5f;
             u.y += (minI.y - (patchSize.height - maxI.y + 1))*0.5f;
@@ -487,7 +491,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                 float mx, my;
                 CvPoint2D32f _v;
 
-                intersect( v, winSize, levelSize, &minJ, &maxJ );
+                intersect_paa( v, winSize, levelSize, &minJ, &maxJ );
 
                 minJ.x = MAX( minJ.x, minI.x );
                 minJ.y = MAX( minJ.y, minI.y );

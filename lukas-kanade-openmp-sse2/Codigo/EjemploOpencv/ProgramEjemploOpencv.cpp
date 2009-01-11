@@ -65,9 +65,23 @@ void PyramidLK(IplImage& frameA, IplImage& frameB,CvPoint2D32f frameA_features[]
 	* "0" means disable enhancements.  (For example, the second array isn't pre-initialized with guesses.)
 	*/
 
+
+	Cronometro c1,c2;
+	
+	c1.Start();
+	cvCalcOpticalFlowPyrLK(&frameA, &frameB, pyramid1, pyramid2, frameA_features, frameB_features, 
+		number_of_features, optical_flow_window, level, optical_flow_found_feature, optical_flow_feature_error, 
+		optical_flow_termination_criteria, 0 );
+	c1.Stop();
+	c1.PrintTime("Tiempo que ha tardado en ejecutarse el algoritmo piramidal de opencv para esta imagen");
+
+	c2.Start();
 	cvCalcOpticalFlowPyrLK_paa(&frameA, &frameB, pyramid1, pyramid2, frameA_features, frameB_features, 
 		number_of_features, optical_flow_window, level, optical_flow_found_feature, optical_flow_feature_error, 
 		optical_flow_termination_criteria, 0 );
+	c2.Stop();
+	c1.PrintTime("Tiempo que ha tardado en ejecutarse el algoritmo piramidal mejorado para esta imagen");	
+
 	cvReleaseImage(&pyramid1);
 	cvReleaseImage(&pyramid2);
 }
@@ -175,7 +189,7 @@ int EjemploVideo(void)
 		PyramidLK(*frame1_1C,*frame2_1C,frame1_features,frame2_features,number_of_features,3,5);
 
 
-		IplImage* vx,*vy,*grayFrame1,*grayFrame2;
+		IplImage* vx,*vy;
 		CvSize size = cvGetSize(frame1_1C);
 
 		vx = cvCreateImage(size, IPL_DEPTH_32F, 1);
