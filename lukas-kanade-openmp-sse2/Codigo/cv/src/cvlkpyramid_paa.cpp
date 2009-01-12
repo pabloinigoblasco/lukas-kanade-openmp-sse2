@@ -42,8 +42,9 @@
 #include <float.h>
 #include <stdio.h>
 
-#define EN_ASM_8
-#define EN_ASM_7
+//#define EN_ASM_8
+//#define EN_ASM_7
+#define EN_ASM_6
 
 static void
 intersect_paa( CvPoint2D32f pt, CvSize win_size, CvSize imgSize,
@@ -441,10 +442,10 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 			//Looks like this gets his thread number and works over a piece of data
 			//of the complete set
             int threadIdx = cvGetThreadNum();
-            float* patchI = _patchI[threadIdx];
-            float* patchJ = _patchJ[threadIdx];
-            float* Ix = _Ix[threadIdx];
-            float* Iy = _Iy[threadIdx];
+            __declspec(align(16)) float* patchI = _patchI[threadIdx];
+            __declspec(align(16)) float* patchJ = _patchJ[threadIdx];
+            __declspec(align(16)) float* Ix = _Ix[threadIdx];
+            __declspec(align(16)) float* Iy = _Iy[threadIdx];
 
             v.x = featuresB[i].x;
             v.y = featuresB[i].y;
@@ -520,20 +521,102 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
                     for( y = 0; y < jsz.height; y++ )//LN3
                     {
 						//Why it uses const???
-                        const float* pi = patchI +
+                        __declspec(align(16)) float* pi = patchI +
                             (y + minJ.y - minI.y + 1)*isz.width + minJ.x - minI.x + 1;
-                        const float* pj = patchJ + y*jsz.width;
-                        const float* ix = Ix +
+                        __declspec(align(16)) float* pj = patchJ + y*jsz.width;
+                        __declspec(align(16)) float* ix = Ix +
                             (y + minJ.y - minI.y)*(isz.width-2) + minJ.x - minI.x;
-                        const float* iy = Iy + (ix - Ix);
-
+                        __declspec(align(16)) float* iy = Iy + (ix - Ix);
+#ifndef EN_ASM_6
                         for( x = 0; x < jsz.width; x++ )//LN4
                         {
                             double t0 = pi[x] - pj[x];
                             bx += t0 * ix[x];
                             by += t0 * iy[x];
                         }
-                    }
+#else
+						__asm{
+							mov ebx, jsz.width
+							shr ebx, 2 //Divide by 4 to get the number of iterations to optimize
+							shl ebx, 4 //Multiply by 16 to get the number of bytes to process
+							           //4 floats per iteration (16 bytes per iteration)
+							mov edx, jsz.width
+							shl edx, 2 //Total number of bytes to process
+							mov ecx, 0h//counter. Bytes processed
+						ln4_lesmult_opt:
+							cmp ecx, ebx
+							jge ln4_lesmult_norm //If ecx >= ebx go to normal iterations
+							// float t = pi[x] - pj[x]; xmm0 is t1,t2,t3,t4
+							mov esi, pi
+							add esi, ecx
+							movaps xmm0, WORD PTR [esi]
+							mov esi, pj
+							add esi, ecx
+							movaps xmm1, WORD PTR [esi]
+							subps xmm0, xmm1 //xmm0 is t
+							// bx += (double) (t * ix[x]);
+							mov esi, ix
+							add esi, ecx
+							movaps xmm1, [esi] //xmm1 <- ix[4]
+							mulps xmm1, xmm0 //xmm1 <- ix[4]*t[4]
+							movaps xmm3, xmm1
+							shufps xmm3, xmm1, 01bh//00011011
+							addps xmm1, xmm3
+							movaps xmm3, xmm1
+							shufps xmm3, xmm1, 0b1h//10110001
+							addps xmm1, xmm3
+							cvtss2sd xmm1, xmm1
+							addsd xmm1, bx
+							movsd bx, xmm1
+							//by += (double) (t * iy[x]);
+							mov esi, iy
+							add esi, ecx
+							movaps xmm2, [esi]
+							mulps xmm2, xmm0
+							movaps xmm3, xmm2
+							shufps xmm3, xmm2, 01bh
+							addps xmm2, xmm3
+							movaps xmm3, xmm2
+							shufps xmm3, xmm2, 0b1h
+							addps xmm2, xmm3
+							cvtss2sd xmm2, xmm2
+							addsd xmm2, by
+							movsd by, xmm2
+							add ecx, 16
+							jmp ln4_lesmult_opt
+						ln4_lesmult_norm:
+							cmp ecx, edx
+							jge ln4_lesmult_fin //If ecx >= ebx go to normal iterations
+							//1
+							mov esi, pi
+							add esi, ecx
+							movss xmm0, [esi]
+							mov esi, pj
+							add esi, ecx
+							movss xmm1, [esi]
+							subss xmm0, xmm1 //xmmo is t
+							//2
+							mov esi, ix
+							add esi, ecx
+							movss xmm1, [esi]
+							mulss xmm1, xmm0
+							cvtss2sd xmm1, xmm1
+							addsd xmm1, bx
+							movsd bx, xmm1
+							//3
+							mov esi, iy
+							add esi, ecx
+							movss xmm2, [esi]
+							mulss xmm2, xmm0
+							cvtss2sd xmm2, xmm2
+							addsd xmm2, by
+							movsd by, xmm2
+							add ecx, 4
+							jmp ln4_lesmult_norm
+						ln4_lesmult_fin:
+						}
+#endif
+					}
                 }
                 else
                 {
@@ -675,7 +758,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 							mulss xmm2, xmm0
 							cvtss2sd xmm2, xmm2
 							addss xmm2, by
-							movsd by, xmm2
+							movss by, xmm2
 							//6
 							movaps xmm2, [esi]
 							mulss xmm2, xmm2
