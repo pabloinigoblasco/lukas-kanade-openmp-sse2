@@ -42,7 +42,7 @@
 #include <float.h>
 #include <stdio.h>
 
-//#define EN_ASM_8
+#define EN_ASM_8
 #define EN_ASM_7
 
 static void
@@ -549,7 +549,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 #ifndef EN_ASM_7
                         for( x = 0; x < jsz.width; x++ )//LN4
                         {
-                            double t = pi[x] - pj[x];
+                            float t = pi[x] - pj[x];
                             bx += (double) (t * ix[x]);
                             by += (double) (t * iy[x]);
                             Gxx += ix[x] * ix[x];
@@ -568,19 +568,19 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 						ln4_muchmult_opt:
 							cmp ecx, ebx
 							jge ln4_muchmult_norm //If ecx >= ebx go to normal iterations
-							// double t = pi[x] - pj[x]; xmm0 is t1,t2,t3,t4
-							lea esi, pi
+							// float t = pi[x] - pj[x]; xmm0 is t1,t2,t3,t4
+							mov esi, pi
 							add esi, ecx
-							movaps xmm0, esi
-							lea esi, pj
+							movaps xmm0, [esi]
+							mov esi, pj
 							add esi, ecx
-							movaps xmm1, esi
-							subps xmm0, xmm1 //xmmo is t
+							movaps xmm1, [esi]
+							subps xmm0, xmm1 //xmm0 is t
 							// bx += (double) (t * ix[x]);
-							lea esi, ix
+							mov esi, ix
 							add esi, ecx
-							movaps xmm1, esi //xmm1 <- pi[x]
-							mulps xmm1, xmm0
+							movaps xmm1, [esi] //xmm1 <- ix[4]
+							mulps xmm1, xmm0 //xmm1 <- ix[4]*t[4]
 							movaps xmm3, xmm1
 							shufps xmm3, xmm1, 01bh//00011011
 							addps xmm1, xmm3
@@ -590,8 +590,8 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 							cvtss2sd xmm1, xmm1
 							addsd xmm1, bx
 							movsd bx, xmm1
-							//4
-							movaps xmm1, esi
+							//Gxx += ix[x] * ix[x];
+							movaps xmm1, [esi]
 							mulps xmm1, xmm1
 							movaps xmm3, xmm1
 							shufps xmm3, xmm1, 01bh
@@ -601,10 +601,10 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 							addps xmm1, xmm3
 							addss xmm1, Gxx
 							movss Gxx, xmm1
-							//3
-							lea esi, iy
+							//by += (double) (t * iy[x]);
+							mov esi, iy
 							add esi, ecx
-							movaps xmm2, esi
+							movaps xmm2, [esi]
 							mulps xmm2, xmm0
 							movaps xmm3, xmm2
 							shufps xmm3, xmm2, 01bh
@@ -615,8 +615,8 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 							cvtss2sd xmm2, xmm2
 							addsd xmm2, by
 							movsd by, xmm2
-							//6
-							movaps xmm2, esi
+							//Gyy += iy[x] * iy[x];
+							movaps xmm2, [esi]
 							mulps xmm2, xmm2
 							movaps xmm3, xmm2
 							shufps xmm3, xmm2, 01bh
@@ -626,13 +626,13 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 							addps xmm2, xmm3
 							addss xmm2, Gyy
 							movss Gyy, xmm2
-							//5
-							lea esi, ix
+							//Gxy += ix[x] * iy[x];
+							mov esi, ix
 							add esi, ecx
-							movaps xmm1, esi
-							lea esi, iy
+							movaps xmm1, [esi]
+							mov esi, iy
 							add esi, ecx
-							movaps xmm2, esi
+							movaps xmm2, [esi]
 							mulps xmm1, xmm2
 							movaps xmm2, xmm1
 							shufps xmm2, xmm1, 01bh
@@ -648,46 +648,46 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 							cmp ecx, edx
 							jge ln4_muchmult_fin //If ecx >= ebx go to normal iterations
 							//1
-							lea esi, pi
+							mov esi, pi
 							add esi, ecx
-							movss xmm0, esi
-							lea esi, pj
+							movss xmm0, [esi]
+							mov esi, pj
 							add esi, ecx
-							movss xmm1, esi
+							movss xmm1, [esi]
 							subss xmm0, xmm1 //xmmo is t
 							//2
-							lea esi, ix
+							mov esi, ix
 							add esi, ecx
-							movss xmm1, esi
+							movss xmm1, [esi]
 							mulss xmm1, xmm0
 							cvtss2sd xmm1, xmm1
 							addsd xmm1, bx
 							movsd bx, xmm1
 							//4
-							movss xmm1, esi
+							movss xmm1, [esi]
 							mulss xmm1, xmm1
 							addss xmm1, Gxx
 							movss Gxx, xmm1
 							//3
-							lea esi, iy
+							mov esi, iy
 							add esi, ecx
-							movss xmm2, esi
+							movss xmm2, [esi]
 							mulss xmm2, xmm0
 							cvtss2sd xmm2, xmm2
 							addss xmm2, by
 							movsd by, xmm2
 							//6
-							movaps xmm2, esi
+							movaps xmm2, [esi]
 							mulss xmm2, xmm2
 							addss xmm2, Gyy
 							movss Gyy, xmm2
 							//5
-							lea esi, ix
+							mov esi, ix
 							add esi, ecx
-							movss xmm1, esi
-							lea esi, iy
+							movss xmm1, [esi]
+							mov esi, iy
 							add esi, ecx
-							movss xmm2, esi
+							movss xmm2, [esi]
 							mulss xmm1, xmm2
 							addss xmm1, Gyy
 							movss Gyy, xmm1
@@ -766,12 +766,12 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 						ln4_err_opt:
 							cmp ecx, ebx
 							jge ln4_err_norm //If ecx >= ebx go to normal iterations
-							lea esi, pi    //load pi array address
+							mov esi, pi    //load pi array address
 							add esi, ecx   //add counter to address
-							movaps xmm1, esi //load 4 floats from pi
-							lea esi, pj
+							movaps xmm1, [esi] //load 4 floats from pi
+							mov esi, pj
 						    add esi, ecx
-							movaps xmm2, esi //Load 4 floats from pj
+							movaps xmm2, [esi] //Load 4 floats from pj
 							subps xmm1, xmm2 //4 subs
 							mulps xmm1, xmm1 //(pi[x]-pj[x])^2 four numbers
 							movaps xmm2, xmm1
@@ -789,12 +789,12 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 						ln4_err_norm:
 							cmp ecx, edx
 							jge ln4_err_fin
-							lea esi, pi    //load pi array address
+							mov esi, pi    //load pi array address
 							add esi, ecx   //add counter to address
-							movss xmm1, esi //load 1 floats from pi
-							lea esi, pj
+							movss xmm1, [esi] //load 1 floats from pi
+							mov esi, pj
 						    add esi, ecx
-							movss xmm2, esi //Load 1 floats from pj
+							movss xmm2, [esi] //Load 1 floats from pj
 							subss xmm1, xmm2 //1 subs
 							mulss xmm1, xmm1 //(pi[x]-pj[x])^2
 							cvtss2sd xmm1, xmm1
