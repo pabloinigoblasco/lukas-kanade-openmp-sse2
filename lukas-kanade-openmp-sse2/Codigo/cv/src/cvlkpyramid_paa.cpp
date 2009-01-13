@@ -44,8 +44,8 @@
 
 //For testing purposses we define this here
 #define EN_ASM_1
-#define EN_ASM_2
-#define EN_ASM_3
+//#define EN_ASM_2
+//#define EN_ASM_3
 
 static void
 intersect_paa( CvPoint2D32f pt, CvSize win_size, CvSize imgSize,
@@ -536,86 +536,136 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
         by += t0 * iy[x];
     }
 #else
-	__asm{
-		mov ebx, jsz.width
-		shr ebx, 2 //Divide by 4 to get the number of iterations to optimize
-		shl ebx, 4 //Multiply by 16 to get the number of bytes to process
-		           //4 floats per iteration (16 bytes per iteration)
-		mov edx, jsz.width
-		shl edx, 2 //Total number of bytes to process
-		mov ecx, 0h//counter. Bytes processed
-	ln4_lesmult_opt:
-		cmp ecx, ebx
-		jge ln4_lesmult_norm //If ecx >= ebx go to normal iterations
-		// float t = pi[x] - pj[x]; xmm0 is t1,t2,t3,t4
-		mov esi, pi
-		add esi, ecx
-		movaps xmm0, WORD PTR [esi]
-		mov esi, pj
-		add esi, ecx
-		movaps xmm1, WORD PTR [esi]
-		subps xmm0, xmm1 //xmm0 is t
-		// bx += (double) (t * ix[x]);
-		mov esi, ix
-		add esi, ecx
-		movaps xmm1, [esi] //xmm1 <- ix[4]
-		mulps xmm1, xmm0 //xmm1 <- ix[4]*t[4]
-		movaps xmm3, xmm1
-		shufps xmm3, xmm1, 01bh//00011011
-		addps xmm1, xmm3
-		movaps xmm3, xmm1
-		shufps xmm3, xmm1, 0b1h//10110001
-		addps xmm1, xmm3
-		cvtss2sd xmm1, xmm1
-		addsd xmm1, bx
-		movsd bx, xmm1
-		//by += (double) (t * iy[x]);
-		mov esi, iy
-		add esi, ecx
-		movaps xmm2, [esi]
-		mulps xmm2, xmm0
-		movaps xmm3, xmm2
-		shufps xmm3, xmm2, 01bh
-		addps xmm2, xmm3
-		movaps xmm3, xmm2
-		shufps xmm3, xmm2, 0b1h
-		addps xmm2, xmm3
-		cvtss2sd xmm2, xmm2
-		addsd xmm2, by
-		movsd by, xmm2
-		add ecx, 16
-		jmp ln4_lesmult_opt
-	ln4_lesmult_norm:
-		cmp ecx, edx
-		jge ln4_lesmult_fin //If ecx >= ebx go to normal iterations
-		//1
-		mov esi, pi
-		add esi, ecx
-		movss xmm0, [esi]
-		mov esi, pj
-		add esi, ecx
-		movss xmm1, [esi]
-		subss xmm0, xmm1 //xmmo is t
-		//2
-		mov esi, ix
-		add esi, ecx
-		movss xmm1, [esi]
-		mulss xmm1, xmm0
-		cvtss2sd xmm1, xmm1
-		addsd xmm1, bx
-		movsd bx, xmm1
-		//3
-		mov esi, iy
-		add esi, ecx
-		movss xmm2, [esi]
-		mulss xmm2, xmm0
-		cvtss2sd xmm2, xmm2
-		addsd xmm2, by
-		movsd by, xmm2
-		add ecx, 4
-		jmp ln4_lesmult_norm
-	ln4_lesmult_fin:
+	__declspec(align(16)) float t[] = {0.0,0.0,0.0,0.0};
+	for (x = 0; x<jsz.width && x+3 < jsz.width; x+= 4) {
+		double bx2 = bx;
+
+		t[0] = pi[x] - pj[x]; 
+		t[1] = pi[x+1] - pj[x+1]; 
+		t[2] = pi[x+2] - pj[x+2];
+		t[3] = pi[x+3] - pj[x+3];
+		
+		bx2 += t[0] * ix[x];
+		bx2 += t[1] * ix[x+1];
+		bx2 += t[2] * ix[x+2];
+		bx2 += t[3] * ix[x+3];
+
+		__asm {
+		  mov eax, x
+		  shl eax, 4
+          lea esi, t
+		  movaps xmm0, [esi]
+
+		  mov esi, ix
+		  add esi, eax
+		  movups xmm1, [esi]
+		  mulps xmm1, xmm0
+		  movaps xmm2, xmm1
+		  shufps xmm2, xmm1, 1bh//00011011
+		  addps xmm1, xmm2
+		  movaps xmm2, xmm1
+		  shufps xmm2, xmm1, 0b1h//10110001
+		  addps xmm1, xmm2
+		  cvtss2sd xmm1, xmm1
+		  movsd xmm3, bx
+		  addsd xmm1, xmm3
+		  movsd bx, xmm1
+
+		  mov esi, iy
+		  add esi, eax
+		  movups xmm1, [esi]
+		  mulps xmm1, xmm0
+		  movaps xmm2, xmm1
+		  shufps xmm2, xmm1, 1bh//00011011
+		  addps xmm1, xmm2
+		  movaps xmm2, xmm1
+		  shufps xmm2, xmm1, 0b1h//10110001
+		  addps xmm1, xmm2
+		  cvtss2sd xmm1, xmm1
+		  addsd xmm1, by
+		  movsd by, xmm1
+		}
 	}
+	//__asm{
+	//	mov eax, jsz.width
+	//	shr eax, 2 //Divide by 4 to get the number of iterations to optimize
+	//	shl eax, 4 //Multiply by 16 to get the number of bytes to process
+	//	           //4 floats per iteration (16 bytes per iteration)
+	//	mov edx, jsz.width
+	//	shl edx, 2 //Total number of bytes to process
+	//	mov ecx, 0h//counter. Bytes processed
+	//ln4_lesmult_opt:
+	//	cmp ecx, eax
+	//	jge ln4_lesmult_norm //If ecx >= ebx go to normal iterations
+	//	// float t = pi[x] - pj[x]; xmm0 is t1,t2,t3,t4
+	//	mov esi, pi
+	//	add esi, ecx
+	//	movups xmm0, [esi]
+	//	mov esi, pj
+	//	add esi, ecx
+	//	movups xmm1, [esi]
+	//	subps xmm0, xmm1 //xmm0 is t
+	//	// bx += (double) (t * ix[x]);
+	//	mov esi, ix
+	//	add esi, ecx
+	//	movups xmm1, [esi] //xmm1 <- ix[4]
+	//	mulps xmm1, xmm0 //xmm1 <- ix[4]*t[4]
+	//	movaps xmm3, xmm1
+	//	shufps xmm3, xmm1, 01bh//00011011
+	//	addps xmm1, xmm3
+	//	movaps xmm3, xmm1
+	//	shufps xmm3, xmm1, 0b1h//10110001
+	//	addps xmm1, xmm3
+	//	cvtss2sd xmm1, xmm1
+	//	addsd xmm1, bx
+	//	movsd bx, xmm1
+	//	//by += (double) (t * iy[x]);
+	//	mov esi, iy
+	//	add esi, ecx
+	//	movups xmm2, [esi]
+	//	mulps xmm2, xmm0
+	//	movaps xmm3, xmm2
+	//	shufps xmm3, xmm2, 01bh
+	//	addps xmm2, xmm3
+	//	movaps xmm3, xmm2
+	//	shufps xmm3, xmm2, 0b1h
+	//	addps xmm2, xmm3
+	//	cvtss2sd xmm2, xmm2
+	//	addsd xmm2, by
+	//	movsd by, xmm2
+	//	add ecx, 16
+	//	jmp ln4_lesmult_opt
+	//ln4_lesmult_norm:
+	//	cmp ecx, edx
+	//	jge ln4_lesmult_fin //If ecx >= ebx go to normal iterations
+	//	//1
+	//	mov esi, pi
+	//	add esi, ecx
+	//	movss xmm0, [esi]
+	//	mov esi, pj
+	//	add esi, ecx
+	//	movss xmm1, [esi]
+	//	subss xmm0, xmm1 //xmmo is t
+	//	//2
+	//	mov esi, ix
+	//	add esi, ecx
+	//	movss xmm1, [esi]
+	//	mulss xmm1, xmm0
+	//	cvtss2sd xmm1, xmm1
+	//	addsd xmm1, bx
+	//	movsd bx, xmm1
+	//	//3
+	//	mov esi, iy
+	//	add esi, ecx
+	//	movss xmm2, [esi]
+	//	mulss xmm2, xmm0
+	//	cvtss2sd xmm2, xmm2
+	//	addsd xmm2, by
+	//	movsd by, xmm2
+	//	add ecx, 4
+	//	jmp ln4_lesmult_norm
+	//ln4_lesmult_fin:
+	//}
 #endif
 					}
                 }
@@ -642,28 +692,28 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
     }
 #else
 	__asm{
-		mov ebx, jsz.width
-		shr ebx, 2 //Divide by 4 to get the number of iterations to optimize
-		shl ebx, 4 //Multiply by 16 to get the number of bytes to process
+		mov eax, jsz.width
+		shr eax, 2 //Divide by 4 to get the number of iterations to optimize
+		shl eax, 4 //Multiply by 16 to get the number of bytes to process
 		           //4 floats per iteration (16 bytes per iteration)
 		mov edx, jsz.width
 		shl edx, 2 //Total number of bytes to process
 		mov ecx, 0h//counter. Bytes processed
 	ln4_muchmult_opt:
-		cmp ecx, ebx
+		cmp ecx, eax
 		jge ln4_muchmult_norm //If ecx >= ebx go to normal iterations
 		// float t = pi[x] - pj[x]; xmm0 is t1,t2,t3,t4
 		mov esi, pi
 		add esi, ecx
-		movaps xmm0, [esi]
+		movups xmm0, [esi]
 		mov esi, pj
 		add esi, ecx
-		movaps xmm1, [esi]
+		movups xmm1, [esi]
 		subps xmm0, xmm1 //xmm0 is t
 		// bx += (double) (t * ix[x]);
 		mov esi, ix
 		add esi, ecx
-		movaps xmm1, [esi] //xmm1 <- ix[4]
+		movups xmm1, [esi] //xmm1 <- ix[4]
 		mulps xmm1, xmm0 //xmm1 <- ix[4]*t[4]
 		movaps xmm3, xmm1
 		shufps xmm3, xmm1, 01bh//00011011
@@ -675,7 +725,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 		addsd xmm1, bx
 		movsd bx, xmm1
 		//Gxx += ix[x] * ix[x];
-		movaps xmm1, [esi]
+		movups xmm1, [esi]
 		mulps xmm1, xmm1
 		movaps xmm3, xmm1
 		shufps xmm3, xmm1, 01bh
@@ -688,7 +738,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 		//by += (double) (t * iy[x]);
 		mov esi, iy
 		add esi, ecx
-		movaps xmm2, [esi]
+		movups xmm2, [esi]
 		mulps xmm2, xmm0
 		movaps xmm3, xmm2
 		shufps xmm3, xmm2, 01bh
@@ -700,7 +750,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 		addsd xmm2, by
 		movsd by, xmm2
 		//Gyy += iy[x] * iy[x];
-		movaps xmm2, [esi]
+		movups xmm2, [esi]
 		mulps xmm2, xmm2
 		movaps xmm3, xmm2
 		shufps xmm3, xmm2, 01bh
@@ -713,10 +763,10 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 		//Gxy += ix[x] * iy[x];
 		mov esi, ix
 		add esi, ecx
-		movaps xmm1, [esi]
+		movups xmm1, [esi]
 		mov esi, iy
 		add esi, ecx
-		movaps xmm2, [esi]
+		movups xmm2, [esi]
 		mulps xmm1, xmm2
 		movaps xmm2, xmm1
 		shufps xmm2, xmm1, 01bh
@@ -758,10 +808,10 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 		movss xmm2, [esi]
 		mulss xmm2, xmm0
 		cvtss2sd xmm2, xmm2
-		addss xmm2, by
-		movss by, xmm2
+		addsd xmm2, by
+		movsd by, xmm2
 		//6
-		movaps xmm2, [esi]
+		movss xmm2, [esi]
 		mulss xmm2, xmm2
 		addss xmm2, Gyy
 		movss Gyy, xmm2
@@ -839,16 +889,16 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 	}
 #else
 	__asm{
-		mov ebx, jsz.width
-		shr ebx, 2 //Divide by 4 to get the number of iterations to optimize
-		shl ebx, 4 //Multiply by 16 to get the number of bytes to process
+		mov eax, jsz.width
+		shr eax, 2 //Divide by 4 to get the number of iterations to optimize
+		shl eax, 4 //Multiply by 16 to get the number of bytes to process
 		           //4 floats per iteration (16 bytes per iteration)
 		mov edx, jsz.width
 		shl edx, 2 //Total number of bytes to process
 		mov ecx, 0h//counter. Bytes processed
 	//Optimized loop from 0 to jsz.width/4
 	ln4_err_opt:
-		cmp ecx, ebx
+		cmp ecx, eax
 		jge ln4_err_norm //If ecx >= ebx go to normal iterations
 		mov esi, pi    //load pi array address
 		add esi, ecx   //add counter to address
