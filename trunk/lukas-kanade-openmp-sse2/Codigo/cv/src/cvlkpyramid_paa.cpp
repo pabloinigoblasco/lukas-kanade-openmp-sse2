@@ -540,179 +540,123 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
         _by += t * iy[x];
     }
 #else
-	for( x = 0; x < jsz.width && (x+3)<jsz.width; x+=4 )//LN4
-    {
-		double t[] = {(double)pi[x] - pj[x], (double)pi[x+1]-pj[x+1],
-			(double)pi[x+2]-pj[x+2],(double)pi[x+3]-pj[x+3]};
-		double _bx_2 = _bx;
-		//_bx += (double) (t * ix[x]);
-		__asm{
-		lea esi, t
-		movupd xmm1, [esi]
-		movupd xmm2, [esi + 16]
-		mov ecx, x
-		shl ecx, 2
+	__asm{
+
+		mov eax, jsz.width
+		shr eax, 2 //Divide _by 4 to get the number of iterations to optimize
+		shl eax, 4 //Multiply by 16 to get the number of bytes to process
+				   //4 floats per iteration (16 bytes per iteration)
+		mov edx, jsz.width
+		shl edx, 2 //Total number of bytes to process
+		mov ecx, 0h//counter. Bytes processed
+	ln4_lesmult_opt:
+		cmp ecx, eax
+		jge ln4_lesmult_norm //If ecx >= eax go to normal iterations
+
+		//t calculation
+		mov esi, pi
+		add esi, ecx
+		movups xmm1, [esi]
+		mov esi, pj
+		add esi, ecx
+		movups xmm2, [esi]
+		subps xmm1, xmm2
+		movaps xmm2, xmm1
+		shufps xmm1, xmm1, 04h
+		shufps xmm2, xmm2, 0eh
+		cvtps2pd xmm1, xmm1 //t[x+1], t[0]
+		cvtps2pd xmm2, xmm2 //t[x+3], t[x+2]
+
+		//_bx += t * ix[x];
 		mov esi, ix
 		add esi, ecx
-		movups xmm3, [esi]
+		movups xmm3, [esi] //ix[x+3], ix[x+2], ix[x+1], ix[x+0]
 		//conversion to double
 		movaps xmm4, xmm3 //make a copy
-		//We make one xmm to be aabb and the other ccdd
-		shufps xmm3, xmm3, 05h//00000101
-		shufps xmm4, xmm4, 0afh//10101111
-		cvtps2pd xmm3, xmm3 //xmm3 is ix[x],ix[x+1] to doubles
-		cvtps2pd xmm4, xmm4 //xmm4 is ix[x+2],ix[x+3] to doubles
+		//We make each xmm to be two array items
+		shufps xmm3, xmm3, 04h//0000 0100
+		shufps xmm4, xmm4, 0eh//0000 1110
+		cvtps2pd xmm3, xmm3 //xmm3 is ix[x+1],ix[x+0] to doubles
+		cvtps2pd xmm4, xmm4 //xmm4 is ix[x+3],ix[x+2] to doubles
 		//make the mults with t => xmm1*xmm3 and xmm2*xmm4
 		mulpd xmm3, xmm1
 		mulpd xmm4, xmm2
 		//add them
-		addpd xmm3, xmm4 //xmm3 is ix[x]*t(x=0)+ix[x+2]*t(x=2), ix[x+1]*t(x=1)+ix[x+3]*t(x=3)
+		addpd xmm3, xmm4
 		movapd xmm4, xmm3 //copy 
-		shufpd xmm4, xmm3, 1h//0001 xmm4 is xmm3 doubles inverted
+		shufpd xmm4, xmm3, 1h//0000 0001 reverse
 		addpd xmm3, xmm4 //xmm3 is now to doubles with the same value
 		//We add the variable
-		addsd xmm3, _bx_2
+		addsd xmm3, _bx
 		//store it!
-		movsd _bx_2, xmm3
-		}
-        _bx += t[0] * ix[x] + t[1]*ix[x+1]+t[2]*ix[x+2]+t[3]*ix[x+3];
-		_by += t[0] * iy[x] + t[1]*iy[x+1]+t[2]*iy[x+2]+t[3]*iy[x+3];
-    }
+		movsd _bx, xmm3
 
-    for(; x < jsz.width; x++ )//LN4
-    {
-        double t = pi[x] - pj[x];
-        _bx += t * ix[x];
-        _by += t * iy[x];
-    }
-	//__asm{
-	//	mov eax, jsz.width
-	//	shr eax, 2 //Divide _by 4 to get the number of iterations to optimize
-	//	shl eax, 4 //Multiply by 16 to get the number of bytes to process
-	//	           //4 floats per iteration (16 bytes per iteration)
-	//	mov edx, jsz.width
-	//	shl edx, 2 //Total number of bytes to process
-	//	mov ecx, 0h//counter. Bytes processed
-	//ln4_lesmult_opt:
-	//	cmp ecx, eax
-	//	jge ln4_lesmult_norm //If ecx >= eax go to normal iterations
+        //_by += t * iy[x];
+		mov esi, iy
+		add esi, ecx
+		movups xmm3, [esi] //ix[x+3], ix[x+2], ix[x+1], ix[x+0]
+		//conversion to double
+		movaps xmm4, xmm3 //make a copy
+		//We make each xmm to be two array items
+		shufps xmm3, xmm3, 04h//0000 0100
+		shufps xmm4, xmm4, 0eh//0000 1110
+		cvtps2pd xmm3, xmm3 //xmm3 is ix[x+1],ix[x+0] to doubles
+		cvtps2pd xmm4, xmm4 //xmm4 is ix[x+3],ix[x+2] to doubles
+		//make the mults with t => xmm1*xmm3 and xmm2*xmm4
+		mulpd xmm3, xmm1
+		mulpd xmm4, xmm2
+		//add them
+		addpd xmm3, xmm4
+		movapd xmm4, xmm3 //copy 
+		shufpd xmm4, xmm3, 1h//0000 0001 reverse
+		addpd xmm3, xmm4 //xmm3 is now to doubles with the same value
+		//We add the variable
+		addsd xmm3, _by
+		//store it!
+		movsd _by, xmm3
 
-	//	//double t = pi[x] - pj[x];
-	//	mov esi, pi
-	//	add esi, ecx
-	//	movups xmm1, [esi] //we load 4 floats
-	//	//We need to convert it to doubles
-	//	movaps xmm2, xmm1 //make a copy
-	//	//We make one xmm to be aabb and the other ccdd
-	//	shufps xmm1, xmm1, 05h//00000101
-	//	shufps xmm2, xmm2, 0afh//10101111
-	//	cvtps2pd xmm1, xmm1 //xmm1 is pi[x],pi[x+1] to doubles
-	//	cvtps2pd xmm2, xmm2 //xmm2 is pi[x+2],pi[x+3] to doubles
-	//	mov esi, pj
-	//	add esi, ecx
-	//	movups xmm3, [esi] //we load 4 floats
-	//	//We need to convert it to doubles
-	//	movaps xmm4, xmm3 //make a copy
-	//	//We make one xmm to be aabb and the other ccdd
-	//	shufps xmm3, xmm3, 05h//00000101
-	//	shufps xmm4, xmm4, 0afh//10101111
-	//	cvtps2pd xmm3, xmm3 //xmm3 is pj[x],pj[x+1] to doubles
-	//	cvtps2pd xmm4, xmm4 //xmm4 is pj[x+2],pj[x+3] to doubles
-	//	//make the mults xmm1*xmm3 and xmm2*xmm4
-	//	mulpd xmm1, xmm3
-	//	mulpd xmm2, xmm4
-	//	//Now xmm1 is t(x=0),t(x=1) as doubles
-	//	//Now xmm2 is t(x=2),t(x=3) as doubles
+		add ecx, 16
+		jmp ln4_lesmult_opt
 
-	//	//_bx += (double) (t * ix[x]);
-	//	mov esi, ix
-	//	add esi, ecx
-	//	movups xmm3, [esi]
-	//	//conversion to double
-	//	movaps xmm4, xmm3 //make a copy
-	//	//We make one xmm to be aabb and the other ccdd
-	//	shufps xmm3, xmm3, 05h//00000101
-	//	shufps xmm4, xmm4, 0afh//10101111
-	//	cvtps2pd xmm3, xmm3 //xmm3 is ix[x],ix[x+1] to doubles
-	//	cvtps2pd xmm4, xmm4 //xmm4 is ix[x+2],ix[x+3] to doubles
-	//	//make the mults with t => xmm1*xmm3 and xmm2*xmm4
-	//	mulpd xmm3, xmm1
-	//	mulpd xmm4, xmm2
-	//	//add them
-	//	addpd xmm3, xmm4 //xmm3 is ix[x]*t(x=0)+ix[x+2]*t(x=2), ix[x+1]*t(x=1)+ix[x+3]*t(x=3)
-	//	movapd xmm4, xmm3 //copy 
-	//	shufpd xmm4, xmm3, 1h//0001 xmm4 is xmm3 doubles inverted
-	//	addpd xmm3, xmm4 //xmm3 is now to doubles with the same value
-	//	//We add the variable
-	//	addsd xmm3, _bx
-	//	//store it!
-	//	movsd _bx, xmm3
-	//	
- //       //_by += (double) (t * iy[x]);
-	//	mov esi, iy
-	//	add esi, ecx
-	//	movups xmm3, [esi]
-	//	//**conversion to double START
-	//	movaps xmm4, xmm3 //make a copy
-	//	//We make one xmm to be aabb and the other ccdd
-	//	shufps xmm3, xmm3, 05h//00000101
-	//	shufps xmm4, xmm4, 0afh//10101111
-	//	cvtps2pd xmm3, xmm3 //xmm3 is ix[x],ix[x+1] to doubles
-	//	cvtps2pd xmm4, xmm4 //xmm4 is ix[x+2],ix[x+3] to doubles
-	//	//**conversion to double END
-	//	//make the mults with t => xmm1*xmm3 and xmm2*xmm4
-	//	mulpd xmm3, xmm1
-	//	mulpd xmm4, xmm2
-	//	//add them
-	//	addpd xmm3, xmm4 //xmm3 is ix[x]*t(x=0)+ix[x+2]*t(x=2), ix[x+1]*t(x=1)+ix[x+3]*t(x=3)
-	//	movapd xmm4, xmm3 //copy 
-	//	shufpd xmm4, xmm3, 1h//0001 xmm4 is xmm3 doubles inverted
-	//	addpd xmm3, xmm4 //xmm3 is now to doubles with the same value
-	//	//We add the variable
-	//	addsd xmm3, _by
-	//	//store it!
-	//	movsd _by, xmm3
+	ln4_lesmult_norm:
+		cmp ecx, edx
+		jge ln4_lesmult_fin //If ecx >= edx go to normal iterations
 
-	//	add ecx, 16
-	//	jmp ln4_lesmult_opt
-	//ln4_lesmult_norm:
-	//	cmp ecx, edx
-	//	jge ln4_lesmult_fin //If ecx >= edx go to normal iterations
+		//double t = pi[x] - pj[x];
+		mov esi, pi
+		add esi, ecx
+		movss xmm1, [esi]
+		cvtss2sd xmm1, xmm1
+		mov esi, pj
+		add esi, ecx
+		movss xmm2, [esi]
+		cvtss2sd xmm2, xmm2
+		subsd xmm1, xmm2
+		movsd xmm0, xmm1
+		
+        //_bx += (double) (t * ix[x]);
+		mov esi, ix
+		add esi, ecx
+		movss xmm1, [esi]
+		cvtss2sd xmm1, xmm1
+		mulsd xmm1, xmm0
+		addsd xmm1, _bx
+		movsd _bx, xmm1
+		
+        //_by += (double) (t * iy[x]);
+		mov esi, iy
+		add esi, ecx
+		movss xmm1, [esi]
+		cvtss2sd xmm1, xmm1
+		mulsd xmm1, xmm0
+		addsd xmm1, _by
+		movsd _by, xmm1
 
-	//	//double t = pi[x] - pj[x];
-	//	mov esi, pi
-	//	add esi, ecx
-	//	movss xmm1, [esi]
-	//	cvtss2sd xmm1, xmm1
-	//	mov esi, pj
-	//	add esi, ecx
-	//	movss xmm2, [esi]
-	//	cvtss2sd xmm2, xmm2
-	//	subsd xmm1, xmm2
-	//	movsd xmm0, xmm1
-	//	
- //       //_bx += (double) (t * ix[x]);
-	//	mov esi, ix
-	//	add esi, ecx
-	//	movss xmm1, [esi]
-	//	cvtss2sd xmm1, xmm1
-	//	mulsd xmm1, xmm0
-	//	addsd xmm1, _bx
-	//	movsd _bx, xmm1
-	//	
- //       //_by += (double) (t * iy[x]);
-	//	mov esi, iy
-	//	add esi, ecx
-	//	movss xmm1, [esi]
-	//	cvtss2sd xmm1, xmm1
-	//	mulsd xmm1, xmm0
-	//	addsd xmm1, _by
-	//	movsd _by, xmm1
+		add ecx, 4
+		jmp ln4_lesmult_norm
 
-	//	add ecx, 4
-	//	jmp ln4_lesmult_norm
-	//ln4_lesmult_fin:
-	//}
+	ln4_lesmult_fin:
+	}
 #endif
 					}
                 }
