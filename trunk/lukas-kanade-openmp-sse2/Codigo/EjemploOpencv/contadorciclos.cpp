@@ -30,6 +30,9 @@ Cronometro::ImprimirCiclos (const char *pc, LARGE_INTEGER *cic)
 void 
 Cronometro::ImprimirTiempo (const char *pc, LARGE_INTEGER *cic)
 {   
+	if(pc!=NULL && strlen(pc)>0)
+		printf("%s\n",pc);
+
 	if(cic->QuadPart>(FREC_GHZ*1E9))
 		printf( "%.4f s\n", (float) cic->QuadPart/(FREC_GHZ*1E9));
 	else
@@ -96,6 +99,7 @@ Cronometro::Reset()
 void 
 Cronometro:: PrintTime(const char* message)
 {
+	
 	ImprimirTiempo(message,&result);
 }
 
