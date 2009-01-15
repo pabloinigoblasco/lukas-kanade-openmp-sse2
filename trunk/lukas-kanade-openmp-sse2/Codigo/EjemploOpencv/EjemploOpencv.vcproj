@@ -182,21 +182,33 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\contadorciclos.cpp"
+				RelativePath=".\LkPyramidFacade.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\LKMpi.cpp"
+				RelativePath=".\Program.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\PaintArrowsUtils.cpp"
+			<Filter
+				Name="utils"
 				>
-			</File>
-			<File
-				RelativePath=".\ProgramEjemploOpencv.cpp"
+				<File
+					RelativePath=".\contadorciclos.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\PaintArrowsUtils.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="strategies"
 				>
-			</File>
+				<File
+					RelativePath=".\LKMpi.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -213,6 +225,14 @@
 			</File>
 			<File
 				RelativePath=".\gui.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LkPyramidFacade.h"
+				>
+			</File>
+			<File
+				RelativePath=".\memoryUtils.h"
 				>
 			</File>
 			<File
