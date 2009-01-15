@@ -17,7 +17,6 @@ private:
 		* is set outsite the for() loop.)
 		*/
 		
-	
 		if(frame>=number_of_frames)
 			frame=number_of_frames-2;
 		else if( frame<0)
@@ -41,12 +40,6 @@ private:
 			fprintf(stderr, "Error: Hmm. The end came sooner than we thought.\n");
 		}
 
-			/* Don't run past the front/end of the AVI. */
-		if (current_frame < 0)
-			current_frame = 0;
-		if (current_frame >= number_of_frames - 1)	
-			current_frame = number_of_frames - 2;
-
 		return Image;
 	}
 
@@ -67,6 +60,8 @@ public:
 	void Initialize(const char filename[])
 	{
 		input_video= cvCaptureFromFile(filename);
+		//input_video= cvCaptureFromAVI(filename);
+
 		Image=NULL;
 		current_frame=0;
 
@@ -111,18 +106,31 @@ public:
 		* AND flip the image vertically.  Flip is a shameless hack.  OpenCV reads
 		* in AVIs upside-down by default.  (No comment :-))
 		*/
-		cvConvertImage(Image, &copy, CV_CVTIMG_FLIP);
+		cvConvertImage(Image, &copy);
 	}
 
-	void PreviousFrame()
+	bool PreviousFrame()
 	{
 		current_frame--;
 		GoToCurrentFrame();
+		if(current_frame<=0)
+		{
+			return false;
+			current_frame=0;
+		}
+		return true;
 	}
-	void NextFrame()
+
+	bool NextFrame()
 	{
 		current_frame++;
 		GoToCurrentFrame();
+		if(current_frame>=number_of_frames)
+		{
+			current_frame=number_of_frames;
+			return false;
+		}
+		return true;
 	}
 
 };

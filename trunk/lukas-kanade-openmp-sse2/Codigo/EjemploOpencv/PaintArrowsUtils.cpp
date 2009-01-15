@@ -17,13 +17,12 @@ void PintarLK(IplImage& vx,IplImage& vy,IplImage& windowBackground)
 			q.y =i + cvGetReal2D(&vy, i, j);
 
 			if(p.x!=q.x || p.y!=q.y)
-				PaintPoint(p,q,windowBackground,line_thickness,line_color);
-
+				PaintPoint(p,q,windowBackground,line_thickness,line_color,4);
 		}
 	}
 }
 
-void PintarFeatures(IplImage& vx,IplImage& vy,IplImage& windowBackground,CvPoint2D32f frame1_features[],int number_of_features)
+void PintarFeatures(IplImage& vx,IplImage& vy,IplImage& windowBackground,CvPoint2D32f frame1_features[],int number_of_features,float optical_flow_feature_error[],char optical_flow_found_feature[])
 {
 	for(int i = 0; i < number_of_features; i++)
 	{
@@ -36,20 +35,25 @@ void PintarFeatures(IplImage& vx,IplImage& vy,IplImage& windowBackground,CvPoint
 		q.x =p.x+ cvGetReal2D(&vx, p.y,p.x);
 		q.y =p.y + cvGetReal2D(&vy, p.y,p.x);
 
-		PaintPoint(p,q,windowBackground,line_thickness,line_color);
+		PaintPoint(p,q,windowBackground,line_thickness,line_color,1);
 	}
 }
 
-void PintarPiramide(int number_of_features,CvPoint2D32f frame1_features[],CvPoint2D32f frame2_features[],IplImage& windowBackground)
+void PintarPiramide(int number_of_features,CvPoint2D32f frame1_features[],CvPoint2D32f frame2_features[],IplImage& windowBackground,float optical_flow_feature_error[],
+	char optical_flow_found_feature[])
 {
+	
 	/* For fun (and debugging :)), let's draw the flow field. */
 	for(int i = 0; i < number_of_features; i++)
 	{
-		int line_thickness;				line_thickness = 1;
+		if ( optical_flow_found_feature[i] == 0 )	
+			continue;
+
+		int line_thickness = 1;
 		/* CV_RGB(red, green, blue) is the red, green, and blue components
 		* of the color you want, each out of 255.
 		*/	
-		CvScalar line_color;			line_color = CV_RGB(0,0,255);
+		CvScalar line_color = CV_RGB(0,0,255);
 
 		/* Let's make the flow field look nice with arrows. */
 
@@ -57,24 +61,27 @@ void PintarPiramide(int number_of_features,CvPoint2D32f frame1_features[],CvPoin
 		* (ie: there's not much motion between the frames).  So let's lengthen them by a factor of 3.
 		*/
 		CvPoint p,q;
+		
 		p.x = (int) frame1_features[i].x;
 		p.y = (int) frame1_features[i].y;
 		q.x = (int) frame2_features[i].x;
 		q.y = (int) frame2_features[i].y;
 
-		PaintPoint(p,q,windowBackground,line_thickness,line_color);
+		float distancia=sqrt(pow(p.x-q.x,2.0)+pow(p.y-q.y,2.0));
+		if(distancia>2 &&distancia<8)
+			PaintPoint(p,q,windowBackground,line_thickness,line_color,2);
 	}
 
 }
-void PaintPoint(CvPoint p,CvPoint q,IplImage& windowBackground,int line_thickness,CvScalar line_color)
+void PaintPoint(CvPoint p,CvPoint q,IplImage& windowBackground,int line_thickness,CvScalar line_color,int arrowScale)
 {
 	double angle;		
 	angle = atan2( (double) p.y - q.y, (double) p.x - q.x );
 	double hypotenuse;	hypotenuse = sqrt( square(p.y - q.y) + square(p.x - q.x) );
 
 	/* Here we lengthen the arrow by a factor of three. */
-	q.x = (int) (p.x -  hypotenuse * cos(angle));
-	q.y = (int) (p.y -  hypotenuse * sin(angle));
+	q.x = (int) (p.x -  arrowScale* hypotenuse * cos(angle));
+	q.y = (int) (p.y -  arrowScale*hypotenuse * sin(angle));
 
 	/* Now we draw the main line of the arrow. */
 	/* "windowBackground" is the frame to draw on.
@@ -87,10 +94,10 @@ void PaintPoint(CvPoint p,CvPoint q,IplImage& windowBackground,int line_thicknes
 	/* Now draw the tips of the arrow.  I do some scaling so that the
 	* tips look proportional to the main line of the arrow.
 	*/			
-	p.x = (int) (q.x + 2 * cos(angle + pi / 4));
-	p.y = (int) (q.y + 2 * sin(angle + pi / 4));
+	p.x = (int) (q.x + 2*arrowScale * cos(angle + pi / 4));
+	p.y = (int) (q.y + 2*arrowScale * sin(angle + pi / 4));
 	cvLine( &windowBackground, p, q, line_color, line_thickness, CV_AA, 0 );
-	p.x = (int) (q.x + 2 * cos(angle - pi / 4));
-	p.y = (int) (q.y + 2 * sin(angle - pi / 4));
+	p.x = (int) (q.x + 2*arrowScale * cos(angle - pi / 4));
+	p.y = (int) (q.y + 2*arrowScale * sin(angle - pi / 4));
 	cvLine( &windowBackground, p, q, line_color, line_thickness, CV_AA, 0 );
 }
