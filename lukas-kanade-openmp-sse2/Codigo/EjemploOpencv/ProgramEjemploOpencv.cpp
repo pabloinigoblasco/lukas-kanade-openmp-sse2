@@ -185,50 +185,8 @@ int EjemploVideo(const char* nombreFichero,algoritmo a,executionMode mode)
 
 
 
-struct ImageInfo
-{
-	int depth;
-	int nchannels;
-	int step;
-	int width;
-	int height;
-	float* data;
-};
-
-void getRawImage(IplImage* inputImage,ImageInfo& outImageInfo)
-{
-	CvSize size;
-	cvGetRawData( inputImage, (uchar**)&outImageInfo.data, &outImageInfo.step,&size); 
-
-	outImageInfo.width= size.width;
-	outImageInfo.height=size.height;
-	outImageInfo.nchannels=inputImage->nChannels;
-	outImageInfo.depth=inputImage->depth;
-}
-
-IplImage* ReCreateImageFromRaw(ImageInfo& info)
-{
-	IplImage* imgB =cvCreateImageHeader(cvSize(info.width,info.height),info.depth,info.nchannels);
-	cvSetData(imgB,info.data,info.step);
-	return imgB;
-}
 
 
-void Prueba()
-{
-	ImageInfo info;
-	IplImage* imgA = cvLoadImage("imageA.bmp", true);
-
-	getRawImage(imgA,info);
-	IplImage* imgB=ReCreateImageFromRaw(info);
-
-
-	GUI g;
-	g.Initialize(cvGetSize(imgA));
-	g.Refresh(*imgB);
-	cvWaitKey(0);
-	getchar();	
-}
 int main(void)
 {
 	
