@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)\cv\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\includes&quot;;&quot;..\..\mpich2\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -62,9 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="cvaux.lib cxcore.lib highgui.lib mpi.lib"
+				AdditionalDependencies="cvaux.lib cxcore.lib highgui.lib mpi.lib cv110.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;..\mpich2\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\..\mpich2\lib&quot;;&quot;..\..\lib&quot;;&quot;..\..\bin&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -119,7 +119,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;C:\Documents and Settings\mangelp\Escritorio\ocv\Codigo\cv\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\includes&quot;;&quot;..\..\mpich2\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -138,8 +138,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="cv.lib cxcore.lib cvaux.lib highgui.lib"
+				AdditionalDependencies="cvaux.lib cxcore.lib highgui.lib mpi.lib cv110.lib"
+				OutputFile="..\..\bin\$(ProjectName).exe"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;..\..\mpich2\lib&quot;;&quot;..\..\lib&quot;;&quot;..\..\bin&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
