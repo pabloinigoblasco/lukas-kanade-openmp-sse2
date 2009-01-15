@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="cv.vs2005"
 	ProjectGUID="{204E2D54-C28A-43B7-9618-3EB8DC7D83D1}"
+	RootNamespace="cv.vs2005"
 	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
@@ -51,7 +52,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories=".;..\include;&quot;C:\Archivos de programa\OpenCV\cxcore\include&quot;"
+				AdditionalIncludeDirectories="..\..\..\includes"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;CVAPI_EXPORTS"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -83,17 +84,18 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="cxcore.lib"
-				OutputFile="..\..\bin\cv110.dll"
+				OutputFile="..\..\..\bin\cv110.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib"
+				AdditionalLibraryDirectories="..\..\..\lib"
+				GenerateManifest="true"
 				IgnoreDefaultLibraryNames="libmmd.lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="..\..\bin/cv110.pdb"
+				ProgramDatabaseFile="..\..\bin\cv110.pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="../../lib/cv.lib"
+				ImportLibrary=""
 				TargetMachine="1"
 			/>
 			<Tool
@@ -257,7 +259,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-D_SCL_SECURE_NO_WARNINGS"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;..\include"
+				AdditionalIncludeDirectories="..\..\..\includes"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;CVAPI_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -619,46 +621,6 @@
 				</File>
 				<File
 					RelativePath="cvcolor.cpp"
-					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|x64"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|x64"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="cvcontours.cpp"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
@@ -1774,46 +1736,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="cvswitcher.cpp"
-					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|x64"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|x64"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="cvtables.cpp"
 					>
 					<FileConfiguration
@@ -1902,19 +1824,7 @@
 				Name="External"
 				>
 				<File
-					RelativePath="..\include\cv.h"
-					>
-				</File>
-				<File
-					RelativePath="..\include\cv.hpp"
-					>
-				</File>
-				<File
-					RelativePath="..\include\cvcompat.h"
-					>
-				</File>
-				<File
-					RelativePath="..\include\cvtypes.h"
+					RelativePath="..\..\..\includes\cv.h"
 					>
 				</File>
 			</Filter>

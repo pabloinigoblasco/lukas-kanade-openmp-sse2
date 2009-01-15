@@ -278,8 +278,6 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 inline void en_asm_1(const float* pi,const float* pj,const float* ix,const float* iy,double& _bxx,double& _byx,CvSize jsz)
 {
 	double _bx=0,_by=0;
-
-	int x=0;
 							__asm{
 
 							mov eax, jsz.width
@@ -405,7 +403,6 @@ inline void en_asm_2(double& _bxx,double& _byx,double&  Gxxr,double& Gyyr,double
 {
 	double Gxx=0,Gyy=0,Gxy=0;
 	double _bx=0,_by=0;
-	int x=0;
 
 		__asm{
 
