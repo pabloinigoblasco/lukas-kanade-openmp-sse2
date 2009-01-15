@@ -62,8 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="cvaux.lib cxcore.lib highgui.lib"
+				AdditionalDependencies="cvaux.lib cxcore.lib highgui.lib mpi.lib"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories="&quot;..\mpich2\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -185,6 +186,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LKMpi.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\PaintArrowsUtils.cpp"
 				>
 			</File>
@@ -223,10 +228,6 @@
 			>
 			<File
 				RelativePath=".\Movie2B.avi"
-				>
-			</File>
-			<File
-				RelativePath=".\MovieB.avi"
 				>
 			</File>
 			<File
