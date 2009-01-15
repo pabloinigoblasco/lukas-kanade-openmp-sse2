@@ -47,6 +47,8 @@
 #define EN_ASM_2
 #define EN_ASM_3
 
+#ifndef _OPENMP
+
 static void
 intersect_paa( CvPoint2D32f pt, CvSize win_size, CvSize imgSize,
 			  CvPoint* min_pt, CvPoint* max_pt )
@@ -1051,6 +1053,5 @@ ln4_block3_fin:
 	cvFree( &_status );
 }
 
+#endif
 
-
-/* End of file. */

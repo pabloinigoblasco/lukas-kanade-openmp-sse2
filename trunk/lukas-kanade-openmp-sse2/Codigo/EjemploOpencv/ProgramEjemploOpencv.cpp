@@ -2,7 +2,7 @@
 #include "video.h"
 #include "gui.h"
 #include <stdlib.h>
-#define REPEAT_ALGORITHM_FOR_CLOCK 200
+#define REPEAT_ALGORITHM_FOR_CLOCK 1
 
 
 enum algoritmo {LKpyramidalPAA,LKpyramidalClassic};
@@ -232,20 +232,23 @@ void Prueba()
 int main(void)
 {
 	
+	//char filename[]="tree.avi";
+	char filename[]="Movie2B.avi";
+
 	printf("pulse una tecla para comenzar\n");
 	getchar();
 	Cronometro cClassic,cPaa;
 	
 	printf("Piramide clásico\n\n");
 	cClassic.Start();
-	EjemploVideo("tree.avi",algoritmo::LKpyramidalClassic,executionMode::noDisplay);
+	EjemploVideo(filename,algoritmo::LKpyramidalClassic,executionMode::Display);
 	cClassic.Stop();
 	cClassic.PrintTime("Tiempo total:\n");
 
 
 	printf("\n\nPiramide PAA optimizado\n\n");
 	cPaa.Start();
-	EjemploVideo("tree.avi",algoritmo::LKpyramidalPAA,executionMode::noDisplay);
+	EjemploVideo(filename,algoritmo::LKpyramidalPAA,executionMode::Display);
 	cPaa.Stop();
 	cPaa.PrintTime("Tiempo total:\n");
 	
