@@ -262,7 +262,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				OpenMP="false"
+				OpenMP="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="_cv.h"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
