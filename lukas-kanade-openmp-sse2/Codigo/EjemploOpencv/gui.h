@@ -19,6 +19,7 @@ public:
 	void Refresh()
 	{
 		cvShowImage("Optical Flow", windowBackground);     
+		
 	}
 
 	void Refresh(IplImage& background)

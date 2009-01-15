@@ -221,6 +221,18 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+			<File
+				RelativePath=".\Movie2B.avi"
+				>
+			</File>
+			<File
+				RelativePath=".\MovieB.avi"
+				>
+			</File>
+			<File
+				RelativePath="Z:\Opencv\opencv\tree.avi"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
