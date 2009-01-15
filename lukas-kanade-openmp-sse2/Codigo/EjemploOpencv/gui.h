@@ -1,5 +1,7 @@
 #pragma once
 #include "common.h"
+#include "memoryUtils.h"
+
 class GUI
 {
 private:

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "memoryUtils.h"
 
 void PintarLK(IplImage& vx,IplImage& vy,IplImage& windowBackground)
 {
