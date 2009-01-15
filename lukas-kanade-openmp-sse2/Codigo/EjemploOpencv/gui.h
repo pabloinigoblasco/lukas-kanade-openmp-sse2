@@ -7,7 +7,15 @@ class GUI
 private:
 	IplImage* windowBackground;
 public:
-	
+	GUI()
+	{
+		windowBackground=NULL;
+	}
+	~GUI()
+	{
+		if(windowBackground!=NULL)
+			cvReleaseImage(&windowBackground);
+	}
 	IplImage GetWindowBackground()
 	{
 		return *windowBackground;

@@ -642,7 +642,7 @@ ln4_block2_fin:
 }
 /*PAA version*/
 CV_IMPL void
-cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
+cvCalcOpticalFlowPyrLK_paa_omp( const void* arrA, const void* arrB,
 						   void* pyrarrA, void* pyrarrB,
 						   const CvPoint2D32f * featuresA,
 						   CvPoint2D32f * featuresB,

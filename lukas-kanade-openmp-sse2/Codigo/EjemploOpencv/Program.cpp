@@ -114,7 +114,7 @@ int EjemploVideo(const char* nombreFichero,algoritmo a,executionMode mode)
 			v.GetCurrentFrameCopy(g.GetWindowBackground());
 			PintarPiramide(number_of_features,frame1_features,frame2_features,g.GetWindowBackground(),optical_flow_feature_error,optical_flow_found_feature);
 			g.Refresh();      
-			int key_pressed = cvWaitKey(100);
+			int key_pressed = cvWaitKey(1);
 		}
 
 		continuar=v.NextFrame();
@@ -131,26 +131,33 @@ int EjemploVideo(const char* nombreFichero,algoritmo a,executionMode mode)
 int main(int argc, char **argv)
 {
 	
-	//char filename[]="tree.avi";
-	char filename[]="Movie2B.avi";
+	char filename[]="tree.avi";
+	//char filename[]="Movie2B.avi";
 
 	printf("pulse una tecla para comenzar\n");
 	getchar();
-	Cronometro cClassic,cPaa;
+	Cronometro cClassic,cPaa,cPaaOmp;
 	
 	printf("Piramide clásico\n\n");
 	cClassic.Start();
-	EjemploVideo(filename,algoritmo::LKpyramidalClassic,executionMode::Display);
+	EjemploVideo(filename,algoritmo::LKpyramidalClassic,executionMode::noDisplay);
 	cClassic.Stop();
 	cClassic.PrintTime("Tiempo total:\n");
 
 
-	printf("\n\nPiramide PAA optimizado\n\n");
+	printf("\n\nPiramide PAA optimizado sse2\n\n");
 	cPaa.Start();
-	EjemploVideo(filename,algoritmo::LKpyramidalPAA,executionMode::Display);
+	EjemploVideo(filename,algoritmo::LKpyramidalPAA,executionMode::noDisplay);
 	cPaa.Stop();
 	cPaa.PrintTime("Tiempo total:\n");
 	
+	printf("\n\nPiramide PAA optimizado sse2+omp\n\n");
+	cPaaOmp.Start();
+	EjemploVideo(filename,algoritmo::LKpyramidalPAA_OpenMP,executionMode::noDisplay);
+	cPaaOmp.Stop();
+	cPaaOmp.PrintTime("Tiempo total:\n");
+	
+
 	getchar();
 	printf("Pulse una tecla para finalizar");
 	//EjemploSimple();

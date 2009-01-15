@@ -15,5 +15,5 @@ void PintarFeatures(IplImage&,IplImage&,IplImage& ,CvPoint2D32f [],int);
 static const double pi = 3.14159265358979323846;
 
 
-enum algoritmo {LKpyramidalPAA,LKpyramidalClassic};
+enum algoritmo {LKpyramidalPAA,LKpyramidalPAA_OpenMP,LKpyramidalClassic};
 enum executionMode{noDisplay,Display};
