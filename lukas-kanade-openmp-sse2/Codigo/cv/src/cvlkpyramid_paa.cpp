@@ -43,9 +43,11 @@
 #include <stdio.h>
 
 //For testing purposses we define this here
+#ifndef MINGW
 #define EN_ASM_1
 #define EN_ASM_2
-#define EN_ASM_3
+//#define EN_ASM_3
+#endif
 
 #ifndef _OPENMP
 

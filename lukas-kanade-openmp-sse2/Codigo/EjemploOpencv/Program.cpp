@@ -3,6 +3,7 @@
 #include "gui.h"
 #include "lkPyramidFacade.h"
 #include "memoryUtils.h"
+#include "LKMpi.h"
 
 int EjemploSimple(algoritmo a)
 {
@@ -126,16 +127,13 @@ int EjemploVideo(const char* nombreFichero,algoritmo a,executionMode mode)
 
 
 
-
-
-int main(int argc, char **argv)
+void TrackVideo()
 {
-	
 	char filename[]="tree.avi";
 	//char filename[]="Movie2B.avi";
 
 	printf("pulse una tecla para comenzar\n");
-	getchar();
+	//getchar();
 	Cronometro cClassic,cPaa,cPaaOmp;
 	
 	printf("Piramide clásico\n\n");
@@ -156,12 +154,12 @@ int main(int argc, char **argv)
 	EjemploVideo(filename,algoritmo::LKpyramidalPAA_OpenMP,executionMode::noDisplay);
 	cPaaOmp.Stop();
 	cPaaOmp.PrintTime("Tiempo total:\n");
-	
+}
 
-	getchar();
-	printf("Pulse una tecla para finalizar");
-	//EjemploSimple();
-	//Prueba();
+int main(int argc, char **argv)
+{
+	lk_mpi (argc, argv);
+	//PruebaSerializacion();
 }
 
 
