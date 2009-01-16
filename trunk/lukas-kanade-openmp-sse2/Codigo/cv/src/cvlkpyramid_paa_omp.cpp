@@ -45,9 +45,11 @@
 #include <stdio.h>
 
 //For testing purposses we define this here
+#ifndef MINGW
 #define EN_ASM_1
 #define EN_ASM_2
 //#define EN_ASM_3
+#endif
 
 //#ifdef _OPENMP
 static void
@@ -274,7 +276,7 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 }
 
 
-
+#ifdef EN_ASM_1
 inline void en_asm_1(const float* pi,const float* pj,const float* ix,const float* iy,double& _bxx,double& _byx,CvSize jsz)
 {
 	double _bx=0,_by=0;
@@ -398,7 +400,9 @@ ln4_lesmult_fin:
 						_bxx+=_bx;
 						_byx+=_by;
 }
+#endif
 
+#ifdef EN_ASM_2
 inline void en_asm_2(double& _bxx,double& _byx,double&  Gxxr,double& Gyyr,double& Gxyr,const float* ix,const float* iy,const float* pi,const float* pj,CvSize jsz)
 {
 	double Gxx=0,Gyy=0,Gxy=0;
@@ -637,6 +641,8 @@ ln4_block2_fin:
 	_bxx+=_bx;
 	_byx+=_by;
 }
+#endif
+
 /*PAA version*/
 CV_IMPL void
 cvCalcOpticalFlowPyrLK_paa_omp( const void* arrA, const void* arrB,

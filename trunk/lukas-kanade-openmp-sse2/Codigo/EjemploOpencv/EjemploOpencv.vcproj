@@ -199,6 +199,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\MPIImagePassing.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\PaintArrowsUtils.cpp"
 					>
 				</File>
@@ -227,6 +231,10 @@
 			</File>
 			<File
 				RelativePath=".\gui.h"
+				>
+			</File>
+			<File
+				RelativePath=".\LKMpi.h"
 				>
 			</File>
 			<File
