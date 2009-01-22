@@ -8,6 +8,7 @@ struct ImageInfo
 	int width;
 	int height;
 	float* data;
+	bool end;
 };
 
 //serializar imagen para enviarla por mpi
@@ -33,26 +34,48 @@ IplImage* ReCreateImageFromRaw(ImageInfo& info)
 	return imgB;
 }
 
+
 void SendImageThroughMPI(IplImage* img,int dest)
 {
-	ImageInfo info=getRawImage(img);
+	ImageInfo info;
+	MPI_Request r;
 
-	MPI_Send(&info,sizeof(info), MPI_CHAR, dest, 0, MPI_COMM_WORLD);	
-	int size=info.step*info.height;
-	MPI_Send(info.data,size, MPI_CHAR, dest, 2, MPI_COMM_WORLD);
-	cvReleaseImage(&img);
+	if(img!=NULL)
+	{
+		info=getRawImage(img);
+		info.end=false;
+		MPI_Isend(&info,sizeof(info), MPI_CHAR, dest, 0, MPI_COMM_WORLD,&r);	
+		int size=info.step*info.height;
+		MPI_Send(info.data,size, MPI_CHAR, dest, 2, MPI_COMM_WORLD);
+		//MPI_Isend(info.data,size, MPI_CHAR, dest, 2, MPI_COMM_WORLD,&r);
+		cvReleaseImage(&img);
+	}
+	else
+	{
+		info.end=true;
+		MPI_Isend(&info,sizeof(info), MPI_CHAR, dest, 0, MPI_COMM_WORLD,&r);	
+	}
 }
+
 IplImage* ReceiveImageThroughMPI(int orig)
 {
 	ImageInfo info;
 	MPI_Status stat;
 
 	MPI_Recv(&info,sizeof(info),MPI_CHAR,orig,0,MPI_COMM_WORLD,&stat);
+	if(!info.end)
+	{
+		int datosToReceive=info.height*info.step*4;
+		info.data=(float*)malloc(datosToReceive*sizeof(float));
+		MPI_Recv(info.data,datosToReceive,MPI_CHAR,orig,2,MPI_COMM_WORLD,&stat);
+		IplImage* ret=ReCreateImageFromRaw(info);
+		return  ret;
+	}
+	else
+	{
+		return NULL;
+	}
 
-	int datosToReceive=info.height*info.step*4;
-	info.data=(float*)malloc(datosToReceive*sizeof(float));
-	MPI_Recv(info.data,datosToReceive,MPI_CHAR,orig,2,MPI_COMM_WORLD,&stat);
-	return ReCreateImageFromRaw(info);
 }
 
 void PruebaSerializacion()

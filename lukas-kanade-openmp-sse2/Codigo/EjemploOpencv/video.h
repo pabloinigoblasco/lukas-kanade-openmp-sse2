@@ -3,6 +3,7 @@
 class Video
 {
 private:
+	string s;
 	long current_frame ;
 	long number_of_frames;
 	CvCapture *input_video;
@@ -60,9 +61,10 @@ public:
 
 	void Initialize(const char filename[])
 	{
+		s=filename;
 		input_video= cvCaptureFromFile(filename);
 		//input_video= cvCaptureFromAVI(filename);
-
+		
 		Image=NULL;
 		current_frame=0;
 
@@ -134,6 +136,8 @@ public:
 		}
 		return true;
 	}
+
+
 
 };
 
