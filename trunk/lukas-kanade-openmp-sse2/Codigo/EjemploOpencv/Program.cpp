@@ -128,8 +128,8 @@ int EjemploVideo(Video& v,algoritmo a,executionMode mode)
 
 void TrackVideo()
 {
-	char filename[]="tree.avi";
-	//char filename[]="Movie2B.avi";
+	//char filename[]="tree.avi";
+	char filename[]="Movie2B.avi";
 	Video v;
 	v.Initialize(filename);
 
@@ -161,14 +161,14 @@ void TrackVideo()
 int main(int argc, char **argv)
 {
 	//char filename[]="tree.avi";
-	/*char filename[]="Movie2B.avi";
+	char filename[]="Movie2B.avi";
 	Video v;
 
-	int temporal_window=200;
+	int temporal_window=10;
 
 	v.Initialize(filename);
-	lk_mpi (argc, argv,v,temporal_window,9,4,algoritmo::LKpyramidalPAA,400);*/
-	TrackVideo();
+	lk_mpi (argc, argv,v,temporal_window,9,4,algoritmo::LKpyramidalPAA,400);
+	//TrackVideo();
 }
 
 
