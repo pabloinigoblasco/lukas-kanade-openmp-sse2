@@ -11,8 +11,9 @@ struct ImageInfo
 };
 
 //serializar imagen para enviarla por mpi
-void getRawImage(IplImage* inputImage,ImageInfo& outImageInfo)
+ImageInfo getRawImage(IplImage* inputImage)
 {
+	ImageInfo outImageInfo;
 	CvSize size;
 	cvGetRawData( inputImage, (uchar**)&outImageInfo.data, &outImageInfo.step,&size); 
 
@@ -20,6 +21,8 @@ void getRawImage(IplImage* inputImage,ImageInfo& outImageInfo)
 	outImageInfo.height=size.height;
 	outImageInfo.nchannels=inputImage->nChannels;
 	outImageInfo.depth=inputImage->depth;
+
+	return outImageInfo;
 }
 
 //deserializar la imagen y recojerla por mpi
@@ -32,16 +35,11 @@ IplImage* ReCreateImageFromRaw(ImageInfo& info)
 
 void SendImageThroughMPI(IplImage* img,int dest)
 {
-	ImageInfo info;
-	getRawImage(img,info);
+	ImageInfo info=getRawImage(img);
 
-	MPI_Send(&info,sizeof(info), MPI_CHAR, dest, 0, MPI_COMM_WORLD);
-	printf("Datos iniciales enviados, Enviando imagen..\n");
-	
+	MPI_Send(&info,sizeof(info), MPI_CHAR, dest, 0, MPI_COMM_WORLD);	
 	int size=info.step*info.height;
 	MPI_Send(info.data,size, MPI_CHAR, dest, 2, MPI_COMM_WORLD);
-	printf("Imagen enviada..\n");
-
 	cvReleaseImage(&img);
 }
 IplImage* ReceiveImageThroughMPI(int orig)
@@ -54,8 +52,6 @@ IplImage* ReceiveImageThroughMPI(int orig)
 	int datosToReceive=info.height*info.step*4;
 	info.data=(float*)malloc(datosToReceive*sizeof(float));
 	MPI_Recv(info.data,datosToReceive,MPI_CHAR,orig,2,MPI_COMM_WORLD,&stat);
-	printf("estado de la recepción cancelled=%d\n",stat.cancelled);
-	printf("Imagen recibida.. %d\n",datosToReceive);
 	return ReCreateImageFromRaw(info);
 }
 
@@ -65,7 +61,7 @@ void PruebaSerializacion()
 	IplImage* imgA = cvLoadImage("imageA.bmp", true);
 
 	ImageInfo info,info2;
-	getRawImage(imgA,info);
+	info=getRawImage(imgA);
 
 	memcpy(&info2,&info,sizeof(ImageInfo));
 	int size=info2.step*info.height;

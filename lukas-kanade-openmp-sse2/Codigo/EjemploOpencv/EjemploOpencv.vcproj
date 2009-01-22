@@ -63,6 +63,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="cvaux.lib cxcore.lib highgui.lib mpi.lib cv110.lib"
+				OutputFile="..\..\bin\$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;..\..\mpich2\lib&quot;;&quot;..\..\lib&quot;;&quot;..\..\bin&quot;"
 				GenerateDebugInformation="true"
@@ -172,10 +173,6 @@
 		</Configuration>
 	</Configurations>
 	<References>
-		<ProjectReference
-			ReferencedProjectIdentifier="{204E2D54-C28A-43B7-9618-3EB8DC7D83D1}"
-			RelativePathToProject=".\cv\src\cv.vs2005.no_openmp.vcproj"
-		/>
 	</References>
 	<Files>
 		<Filter
@@ -243,6 +240,14 @@
 			</File>
 			<File
 				RelativePath=".\memoryUtils.h"
+				>
+			</File>
+			<File
+				RelativePath=".\PaintUtils.h"
+				>
+			</File>
+			<File
+				RelativePath=".\task.h"
 				>
 			</File>
 			<File
