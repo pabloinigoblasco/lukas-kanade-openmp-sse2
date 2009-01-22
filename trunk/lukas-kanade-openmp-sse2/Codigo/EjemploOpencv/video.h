@@ -57,6 +57,7 @@ public:
 	{
 		return frame_size;
 	}
+
 	void Initialize(const char filename[])
 	{
 		input_video= cvCaptureFromFile(filename);
@@ -95,20 +96,21 @@ public:
 	}
 
 	
-	void GetCurrentFrameCopy(IplImage& copy)
+	void GetFrameSnapshot(IplImage& copy)
 	{
-		this->GetFrameCopy(copy,0);
+		this->GetFrameSnapshot(copy,0);
 	}
-	void GetFrameCopy(IplImage& copy,int offset)
+	void GetFrameSnapshot(IplImage& copy,int offset)
 	{
 		this->LoadFrame(GetCurrentFrame()+offset);
-		/* Convert whatever the AVI image format is into OpenCV's preferred format.
-		* AND flip the image vertically.  Flip is a shameless hack.  OpenCV reads
-		* in AVIs upside-down by default.  (No comment :-))
-		*/
 		cvConvertImage(Image, &copy);
 	}
 
+	void Restart()
+	{
+		current_frame=0;
+		GoToCurrentFrame();
+	}
 	bool PreviousFrame()
 	{
 		current_frame--;

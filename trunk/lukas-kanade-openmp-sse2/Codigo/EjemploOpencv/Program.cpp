@@ -4,6 +4,7 @@
 #include "lkPyramidFacade.h"
 #include "memoryUtils.h"
 #include "LKMpi.h"
+#include "PaintUtils.h"
 
 int EjemploSimple(algoritmo a)
 {
@@ -39,21 +40,20 @@ int EjemploSimple(algoritmo a)
 	CvSize tamanyoVentana={3,3};
 
 	int number_of_features=400;
-	CvPoint2D32f frame1_features[400];
-	/* This array will contain the locations of the points from frame 1 in frame 2. */
-	CvPoint2D32f frame2_features[400];
+	
 
 	while(true)
 	{
-
 		cvCalcOpticalFlowLK( grayA,grayB, tamanyoVentana, velx, vely);
-		CalcularLKPiramid(*grayA,*grayB,frame1_features,frame2_features,number_of_features,3,5,optical_flow_feature_error,optical_flow_found_feature,a);
+		
+		LKPiramidResults lkData;
+		CalcularLKPiramid(*grayA,*grayB,3,5,number_of_features, a,lkData);
 
 		g.Refresh(*grayA);      
 		cvCopyImage(imgA,&g.GetWindowBackground());
 
 		PintarLK(*velx,*vely,g.GetWindowBackground());
-		PintarPiramide(number_of_features,frame1_features,frame2_features,g.GetWindowBackground(),optical_flow_feature_error,optical_flow_found_feature);
+		PintarPiramide(g.GetWindowBackground(),lkData);
 		g.Refresh();
 		int key_pressed = cvWaitKey(0);
 
@@ -76,16 +76,13 @@ int EjemploSimple(algoritmo a)
 }
 
 
-int EjemploVideo(const char* nombreFichero,algoritmo a,executionMode mode)
+int EjemploVideo(Video& v,algoritmo a,executionMode mode)
 {
 	/* Create an object that decodes the input video stream. */
 	GUI g;
-	Video v;
-
+	
 	float optical_flow_feature_error[400];
 	char optical_flow_found_feature[400];
-
-	v.Initialize(nombreFichero);
 
 	if(mode==executionMode::Display)
 	{
@@ -106,14 +103,16 @@ int EjemploVideo(const char* nombreFichero,algoritmo a,executionMode mode)
 	while(continuar)
 	{
 		v.GoToCurrentFrame();		
-		v.GetCurrentFrameCopy(*frame1_1C);
-		v.GetFrameCopy(*frame2_1C,1);
-		CalcularLKPiramid(*frame1_1C,*frame2_1C,frame1_features,frame2_features,number_of_features,9,1,optical_flow_feature_error,optical_flow_found_feature,a);
+		v.GetFrameSnapshot(*frame1_1C);
+		v.GetFrameSnapshot(*frame2_1C,1);
+		LKPiramidResults lkData;
+
+		CalcularLKPiramid(*frame1_1C,*frame2_1C,9,1,number_of_features,a,lkData);
 
 		if(mode==executionMode::Display)
 		{
-			v.GetCurrentFrameCopy(g.GetWindowBackground());
-			PintarPiramide(number_of_features,frame1_features,frame2_features,g.GetWindowBackground(),optical_flow_feature_error,optical_flow_found_feature);
+			v.GetFrameSnapshot(g.GetWindowBackground());
+			PintarPiramide(g.GetWindowBackground(),lkData);
 			g.Refresh();      
 			int key_pressed = cvWaitKey(1);
 		}
@@ -131,6 +130,8 @@ void TrackVideo()
 {
 	char filename[]="tree.avi";
 	//char filename[]="Movie2B.avi";
+	Video v;
+	v.Initialize(filename);
 
 	printf("pulse una tecla para comenzar\n");
 	//getchar();
@@ -138,28 +139,36 @@ void TrackVideo()
 	
 	printf("Piramide clásico\n\n");
 	cClassic.Start();
-	EjemploVideo(filename,algoritmo::LKpyramidalClassic,executionMode::noDisplay);
+	EjemploVideo(v,algoritmo::LKpyramidalClassic,executionMode::noDisplay);
 	cClassic.Stop();
 	cClassic.PrintTime("Tiempo total:\n");
 
-
+	v.Restart();
 	printf("\n\nPiramide PAA optimizado sse2\n\n");
 	cPaa.Start();
-	EjemploVideo(filename,algoritmo::LKpyramidalPAA,executionMode::noDisplay);
+	EjemploVideo(v,algoritmo::LKpyramidalPAA,executionMode::noDisplay);
 	cPaa.Stop();
 	cPaa.PrintTime("Tiempo total:\n");
 	
+	v.Restart();
 	printf("\n\nPiramide PAA optimizado sse2+omp\n\n");
 	cPaaOmp.Start();
-	EjemploVideo(filename,algoritmo::LKpyramidalPAA_OpenMP,executionMode::noDisplay);
+	EjemploVideo(v,algoritmo::LKpyramidalPAA_OpenMP,executionMode::noDisplay);
 	cPaaOmp.Stop();
 	cPaaOmp.PrintTime("Tiempo total:\n");
 }
 
 int main(int argc, char **argv)
 {
-	lk_mpi (argc, argv);
-	//PruebaSerializacion();
+	//char filename[]="tree.avi";
+	/*char filename[]="Movie2B.avi";
+	Video v;
+
+	int temporal_window=200;
+
+	v.Initialize(filename);
+	lk_mpi (argc, argv,v,temporal_window,9,4,algoritmo::LKpyramidalPAA,400);*/
+	TrackVideo();
 }
 
 

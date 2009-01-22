@@ -1,4 +1,5 @@
 #include "common.h"
+#include "PaintUtils.h"
 #include "memoryUtils.h"
 
 void PintarLK(IplImage& vx,IplImage& vy,IplImage& windowBackground)
@@ -40,14 +41,13 @@ void PintarFeatures(IplImage& vx,IplImage& vy,IplImage& windowBackground,CvPoint
 	}
 }
 
-void PintarPiramide(int number_of_features,CvPoint2D32f frame1_features[],CvPoint2D32f frame2_features[],IplImage& windowBackground,float optical_flow_feature_error[],
-	char optical_flow_found_feature[])
+void PintarPiramide(IplImage& windowBackground,LKPiramidResults& data)
 {
-	
+
 	/* For fun (and debugging :)), let's draw the flow field. */
-	for(int i = 0; i < number_of_features; i++)
+	for(int i = 0; i < data.count; i++)
 	{
-		if ( optical_flow_found_feature[i] == 0 )	
+		if ( data.optical_flow_found_feature[i] == 0 )	
 			continue;
 
 		int line_thickness = 1;
@@ -62,11 +62,11 @@ void PintarPiramide(int number_of_features,CvPoint2D32f frame1_features[],CvPoin
 		* (ie: there's not much motion between the frames).  So let's lengthen them by a factor of 3.
 		*/
 		CvPoint p,q;
-		
-		p.x = (int) frame1_features[i].x;
-		p.y = (int) frame1_features[i].y;
-		q.x = (int) frame2_features[i].x;
-		q.y = (int) frame2_features[i].y;
+
+		p.x = (int)data.frameA_features[i].x;
+		p.y = (int)data.frameA_features[i].y;
+		q.x = (int)data.frameB_features[i].x;
+		q.y = (int)data.frameB_features[i].y;
 
 		float distancia=sqrt(pow(p.x-q.x,2.0)+pow(p.y-q.y,2.0));
 		if(distancia>2 &&distancia<8)
