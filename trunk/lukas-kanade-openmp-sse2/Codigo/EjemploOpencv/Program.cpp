@@ -22,9 +22,8 @@ void TestGoodFeaturesToTrack()
 }
 int main(int argc, char **argv)
 {
-	
-	TestGoodFeaturesToTrack();
-	//TrackMPI(argc,argv);
+	//TestGoodFeaturesToTrack();
+	TrackMPI(argc,argv);
 	//TrackVideo();
 }
 

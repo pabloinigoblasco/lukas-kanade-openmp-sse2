@@ -1,1 +1,1 @@
-"C:\Program Files\MPICH2\bin\mpiexec.exe" -wdir . -n 4  -localroot -noprompt EjemploOpencv.exe
+"C:\Program Files\MPICH2\bin\mpiexec.exe" -wdir . -n 3  -localroot -noprompt EjemploOpencv.exe
