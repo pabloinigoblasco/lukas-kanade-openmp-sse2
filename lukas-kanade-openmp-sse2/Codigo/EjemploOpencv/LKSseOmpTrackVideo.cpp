@@ -16,7 +16,6 @@ int EjemploVideo(Video& v,algoritmo a,executionMode mode)
 		g.Initialize(v.GetSize());
 	}
 
-	CvSize tamanyoVentana={3,3};
 	int number_of_features=400;
 
 	IplImage *frame1_1C = NULL, *frame2_1C = NULL;
