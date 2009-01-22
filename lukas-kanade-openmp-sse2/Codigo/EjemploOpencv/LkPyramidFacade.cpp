@@ -7,7 +7,7 @@ void CalcularLKPiramid(IplImage& frameA, IplImage& frameB, int windowsSize,int l
 	allocateOnDemand( &eig_image,cvGetSize(&frameA), IPL_DEPTH_32F, 1 );
 	allocateOnDemand( &temp_image, cvGetSize(&frameB), IPL_DEPTH_32F, 1 );
 
-	cvGoodFeaturesToTrack(&frameA, eig_image, temp_image, outData.frameA_features, &number_of_features, .01, .01, NULL);
+	cvGoodFeaturesToTrack(&frameA, eig_image, temp_image, outData.frameA_features, &number_of_features, .001, 4, NULL);
 	CvSize optical_flow_window = cvSize(windowsSize,windowsSize);
 	CvTermCriteria optical_flow_termination_criteria
 		= cvTermCriteria( CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, .3 );
