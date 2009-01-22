@@ -1,4 +1,4 @@
-#include "LKMpi.h"
+#include "strategies.h"
 #include "gui.h"
 #include "video.h"
 #include "task.h"
@@ -125,3 +125,5 @@ void lk_mpi (int argc, char **argv,Video& video,int frameBufferCount,int window_
 	currentTask.println("Bye World!\n");
 	MPI_Finalize();
 }
+
+

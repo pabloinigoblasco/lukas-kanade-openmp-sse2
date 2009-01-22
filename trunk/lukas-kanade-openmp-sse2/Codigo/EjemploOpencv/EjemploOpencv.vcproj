@@ -182,10 +182,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\LkPyramidFacade.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Program.cpp"
 				>
 			</File>
@@ -197,11 +193,15 @@
 					>
 				</File>
 				<File
+					RelativePath=".\LkPyramidFacade.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\MPIImagePassing.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\PaintArrowsUtils.cpp"
+					RelativePath=".\PaintUtils.cpp"
 					>
 				</File>
 			</Filter>
@@ -210,6 +210,18 @@
 				>
 				<File
 					RelativePath=".\LKMpi.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LKSimpleImages.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\LKSseOmpTrackVideo.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\TestGooFeaturesToTrack.cpp"
 					>
 				</File>
 			</Filter>
@@ -232,10 +244,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\LKMpi.h"
-				>
-			</File>
-			<File
 				RelativePath=".\LkPyramidFacade.h"
 				>
 			</File>
@@ -245,6 +253,10 @@
 			</File>
 			<File
 				RelativePath=".\PaintUtils.h"
+				>
+			</File>
+			<File
+				RelativePath=".\strategies.h"
 				>
 			</File>
 			<File

@@ -1,4 +1,5 @@
-#include "LKMpi.h"
+#include "strategies.h"
+#include "gui.h"
 
 struct ImageInfo
 {
@@ -77,6 +78,8 @@ IplImage* ReceiveImageThroughMPI(int orig)
 	}
 
 }
+
+
 
 void PruebaSerializacion()
 {
