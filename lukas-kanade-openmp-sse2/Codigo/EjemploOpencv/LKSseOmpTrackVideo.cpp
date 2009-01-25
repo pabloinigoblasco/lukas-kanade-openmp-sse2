@@ -24,6 +24,7 @@ int EjemploVideo(Video& v,algoritmo a,executionMode mode)
 
 	bool continuar=true;
 
+	LKPiramidResults last;
 	while(continuar)
 	{
 		v.GoToCurrentFrame();		
@@ -31,15 +32,19 @@ int EjemploVideo(Video& v,algoritmo a,executionMode mode)
 		v.GetFrameSnapshot(*frame2_1C,1);
 		LKPiramidResults lkData;
 
-		CalcularLKPiramid(*frame1_1C,*frame2_1C,9,1,number_of_features,a,lkData);
+
+		CalcularLKPiramid(*frame1_1C,*frame2_1C,15,7,number_of_features,a,0.01,4,lkData);
+		
 
 		if(mode==executionMode::Display)
 		{
 			v.GetFrameSnapshot(g.GetWindowBackground());
-			PintarPiramide(g.GetWindowBackground(),lkData);
+			if(!PintarPiramide(g.GetWindowBackground(),lkData,1,50))
+				PintarPiramide(g.GetWindowBackground(),last,1,50);
 			g.Refresh();      
 			int key_pressed = cvWaitKey(1);
 		}
+		last=lkData;
 
 		continuar=v.NextFrame();
 	}
@@ -63,14 +68,14 @@ void TrackVideo()
 	
 	printf("Piramide clásico\n\n");
 	cClassic.Start();
-	EjemploVideo(v,algoritmo::LKpyramidalClassic,executionMode::noDisplay);
+	EjemploVideo(v,algoritmo::LKpyramidalClassic,executionMode::Display);
 	cClassic.Stop();
 	cClassic.PrintTime("Tiempo total:\n");
 
 	v.Restart();
 	printf("\n\nPiramide PAA optimizado sse2\n\n");
 	cPaa.Start();
-	EjemploVideo(v,algoritmo::LKpyramidalPAA,executionMode::noDisplay);
+	EjemploVideo(v,algoritmo::LKpyramidalPAA,executionMode::Display);
 	cPaa.Stop();
 	cPaa.PrintTime("Tiempo total:\n");
 	

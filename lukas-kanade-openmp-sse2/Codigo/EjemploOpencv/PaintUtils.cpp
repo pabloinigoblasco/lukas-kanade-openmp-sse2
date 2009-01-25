@@ -41,9 +41,10 @@ void PintarFeatures(IplImage& vx,IplImage& vy,IplImage& windowBackground,CvPoint
 	}
 }
 
-void PintarPiramide(IplImage& windowBackground,LKPiramidResults& data,int minDistance,int maxDistance)
+bool PintarPiramide(IplImage& windowBackground,LKPiramidResults& data,int minDistance,int maxDistance)
 {
 
+	int count=0;
 	/* For fun (and debugging :)), let's draw the flow field. */
 	for(int i = 0; i < data.count; i++)
 	{
@@ -70,8 +71,12 @@ void PintarPiramide(IplImage& windowBackground,LKPiramidResults& data,int minDis
 
 		float distancia=sqrt(pow(float(data.frameA_features[i].x-data.frameB_features[i].x),2)+pow(float(data.frameA_features[i].y-data.frameB_features[i].y),2));
 		if(distancia>minDistance &&distancia<maxDistance)
+		{
 			PaintPoint(p,q,windowBackground,line_thickness,line_color,2);
+			count++;
+		}
 	}
+	return count>0;
 
 }
 void PaintPoint(CvPoint p,CvPoint q,IplImage& windowBackground,int line_thickness,CvScalar line_color,int arrowScale)

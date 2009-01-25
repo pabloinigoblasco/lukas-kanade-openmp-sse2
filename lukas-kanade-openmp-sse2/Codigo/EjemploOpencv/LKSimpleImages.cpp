@@ -46,7 +46,7 @@ int EjemploSimple(algoritmo a)
 		cvCalcOpticalFlowLK( grayA,grayB, tamanyoVentana, velx, vely);
 		
 		LKPiramidResults lkData;
-		CalcularLKPiramid(*grayA,*grayB,3,5,number_of_features, a,lkData);
+		CalcularLKPiramid(*grayA,*grayB,3,5,number_of_features, a,0.01,4,lkData);
 
 		g.Refresh(*grayA);      
 		cvCopyImage(imgA,&g.GetWindowBackground());
