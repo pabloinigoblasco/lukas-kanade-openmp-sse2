@@ -110,7 +110,7 @@ void lk_mpi (int argc, char **argv,Video& video,int frameBufferCount,int window_
 
 			LKPiramidResults lkData;
 			currentTask.println("esperando nueva imagen que procesar: %d",sizeof(LKPiramidResults));
-			CalcularLKPiramid(*first,*second,window_size,level,number_of_features_to_track,a,lkData);
+			CalcularLKPiramid(*first,*second,window_size,level,number_of_features_to_track,a,0.01,4,lkData);
 			currentTask.println("enviando resultado: %d",sizeof(LKPiramidResults));
 			MPI_Isend(&lkData,sizeof(LKPiramidResults),MPI_CHAR,0,msg::data,MPI_COMM_WORLD,&result);
 			cvReleaseImage(&first);

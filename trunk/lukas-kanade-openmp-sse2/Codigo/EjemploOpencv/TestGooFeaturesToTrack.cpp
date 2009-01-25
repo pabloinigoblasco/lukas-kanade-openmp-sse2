@@ -16,6 +16,7 @@ void TestGoodFeatures(Video& v)
 	int niveles=1;
 	int number_of_features=400;
 	int frame_offset=4;
+	float quality=0.0;
 
 	IplImage *frame1_1C = NULL, *frame2_1C = NULL;
 	allocateOnDemand( &frame1_1C, v.GetSize(), IPL_DEPTH_8U, 1 );
@@ -30,7 +31,7 @@ void TestGoodFeatures(Video& v)
 		v.GetFrameSnapshot(*frame1_1C,frameA);
 		v.GetFrameSnapshot(*frame2_1C,frameA+frame_offset);
 		
-		CalcularLKPiramid(*frame1_1C,*frame2_1C,tamanyoVentana,niveles,number_of_features,algoritmo::LKpyramidalPAA,lkData);
+		CalcularLKPiramid(*frame1_1C,*frame2_1C,tamanyoVentana,niveles,number_of_features,algoritmo::LKpyramidalPAA,0.01,4,lkData);
 		PintarPiramide(*frame1_1C,lkData,0.1,20);
 
 		g.Refresh(*frame1_1C);      
@@ -51,8 +52,12 @@ void TestGoodFeatures(Video& v)
 			frame_offset--;
 		else if(k=='u')
 			frameA++;
-		else if(k='j')
+		else if(k=='j')
 			frameA--;
+		else if(k=='y')
+			quality+=0.1;
+		else if(k=='h')
+			quality-=0.1;
 
 		if(niveles<0)
 			niveles=0;
@@ -64,6 +69,7 @@ void TestGoodFeatures(Video& v)
 		printf("tamaño de ventana: %d\n",tamanyoVentana);
 		printf("niveles de piramide: %d\n",niveles);
 		printf("Intervalo de frames[%d %d]: %d\n",frameA,frameA+frame_offset);
+		printf("Quality: %f\n",quality);
 		printf("------------------------------------\n");
 		printf("p mayor tamaño de ventana\n");
 		printf("ñ menor tamaño de ventana\n");
@@ -73,6 +79,8 @@ void TestGoodFeatures(Video& v)
 		printf("k menor frame offset\n");
 		printf("u frame++\n");
 		printf("j frame--\n");
+		printf("y increment quality\n");
+		printf("h increment quality\n");
 		printf("------------------------------------\n");
 	}
 
