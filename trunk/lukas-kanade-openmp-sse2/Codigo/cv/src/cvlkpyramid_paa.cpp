@@ -41,14 +41,16 @@
 #include "_cv.h"
 #include <float.h>
 #include <stdio.h>
+#include <time.h>
 
 //For testing purposses we define this here
 #ifndef MINGW
-//#define EN_ASM_1
+#define EN_ASM_1
+#define EN_ASM_1b
 //#define EN_ASM_2
-#define EN_ASM_3_B
 //#define EN_ASM_3
-#define EN_ASM_4
+//#define EN_ASM_3_B
+//#define EN_ASM_4
 #endif
 
 
@@ -588,6 +590,215 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 							_by += t * iy[x];
 						}
 #else
+					
+#ifdef EN_ASM_1b
+  double* tmpBx[] = {0,0};
+  double* tmpBy[] = {0,0};
+  //you don't need to preserve the EAX, EBX, ECX, EDX, ESI, or EDI registers
+__asm{
+
+	mov esi, pi
+	mov edi, pj
+	mov ebx, ix
+	mov ecx, iy
+	//We need to get the last position that we can process without getting 
+	//out of the data
+	mov eax, jsz.width
+	shr eax, 3 //Divide _by 8 to get the number of iterations to optimize
+	shl eax, 5 //Multiply by 32 to get the number of bytes to process
+	mov edx, pi
+	add edx, eax //Limit for pi, it will be used as limit condition for the two
+
+ln4_block1_opt:
+	cmp esi, edx //if esi<ecx
+	jge ln4_block1_norm_entry //go to normal iterations
+
+	//t * ix[x];
+	movups xmm4, [ebx] //ix[x+3], ix[x+2], ix[x+1], ix[x+0]
+	//conversion to double
+	movaps xmm5, xmm4 //make a copy
+	//We make each xmm to be two array items
+	shufps xmm4, xmm4, 04h//0000 0100
+	shufps xmm5, xmm5, 0eh//0000 1110
+	cvtps2pd xmm4, xmm4 //xmm5 is ix[x+1],ix[x+0] to doubles
+	cvtps2pd xmm5, xmm5 //xmm6 is ix[x+3],ix[x+2] to doubles
+
+	//t calculation
+	movups xmm1, [esi]
+	subps xmm1, [edi]
+    //t1,t2,t3,t4 in xmm1
+	
+	//Convert first 4 floats t to doubles into xmm1 and xmm2
+	movaps xmm2, xmm1
+	shufps xmm1, xmm1, 04h
+	cvtps2pd xmm1, xmm1 //t[x+1], t[0]
+	
+	mulpd xmm4, xmm1 //two first doubles t1*ix1, t0*ix0
+
+	shufps xmm2, xmm2, 0eh
+	cvtps2pd xmm2, xmm2 //t[x+3], t[x+2]
+
+	//t * iy[x]
+	movups xmm6, [ecx]
+	movaps xmm7, xmm6
+	//We make each xmm to be two array items
+	shufps xmm6, xmm6, 04h//0000 0100
+	shufps xmm7, xmm7, 0eh//0000 1110
+
+	mulpd xmm5, xmm2 //two next doubles t3*ix3, t2*ix2
+	addpd xmm4, [tmpBx] //acumulator
+	movupd [tmpBx], xmm4 //xmm4 free
+
+	cvtps2pd xmm6, xmm6 //xmm6 is ix[x+1],ix[x+0] to doubles
+	cvtps2pd xmm7, xmm7 //xmm7 is ix[x+3],ix[x+2] to doubles
+
+	//t * ix[x+4];
+	movups xmm0, [ebx+16] //ix[x+3], ix[x+2], ix[x+1], ix[x+0]
+	//conversion to double
+	movaps xmm3, xmm0 //make a copy
+
+	mulpd xmm6, xmm1 //two next doubles t1*iy1, t0*iy0
+	addpd xmm5, [tmpBx] //bx3+bx1, bx2+bx0
+	movupd [tmpBx], xmm5 //xmm5, xmm4 and xmm1 free
+
+	//We make each xmm to be two array items
+	shufps xmm0, xmm0, 04h//0000 0100
+	shufps xmm3, xmm3, 0eh//0000 1110
+	cvtps2pd xmm0, xmm0 //xmm0 is ix[x+1],ix[x+0] to doubles
+	cvtps2pd xmm3, xmm3 //xmm3 is ix[x+3],ix[x+2] to doubles
+
+	mulpd xmm7, xmm2 //t3*iy3, t2*iy2
+	addpd xmm6, [tmpBy]
+	movupd [tmpBy], xmm6 //xmm1, xmm2, xmm4, xmm5, xmm6 free
+
+	//t calculation
+	movups xmm1, [esi+16]
+	subps xmm1, [edi+16]
+    //t5,t6,t7,t8 in xmm1
+
+	//Convert first 4 floats t to doubles into xmm1 and xmm2
+	movaps xmm2, xmm1
+	shufps xmm1, xmm1, 04h
+	cvtps2pd xmm1, xmm1 //t[x+1], t[0]
+
+	mulpd xmm0, xmm1
+	addpd xmm7, [tmpBy]
+	movupd [tmpBy], xmm7 //xmm4, xmm5, xmm6, xmm7 free
+
+	shufps xmm2, xmm2, 0eh
+	cvtps2pd xmm2, xmm2 //t[x+3], t[x+2]
+
+	//t * iy[x+4]
+	movups xmm4, [ecx+16]
+	movaps xmm5, xmm4
+
+	mulpd xmm3, xmm2
+	addpd xmm0, [tmpBx]
+	movupd [tmpBx], xmm0 // xmm0, xmm6, xmm7 free
+
+	//We make each xmm to be two array items
+	shufps xmm4, xmm4, 04h//0000 0100
+	shufps xmm5, xmm5, 0eh//0000 1110
+	cvtps2pd xmm4, xmm4 //xmm4 is ix[x+1],ix[x+0] to doubles
+	cvtps2pd xmm5, xmm5 //xmm5 is ix[x+3],ix[x+2] to doubles
+	
+	mulpd xmm4, xmm1
+	addpd xmm3, [tmpBy]
+	movupd [tmpBy], xmm3 // xmm0, xmm6, xmm7 free
+
+	add esi, 16
+	add edi, 16
+	add ebx, 16
+	add ecx, 16
+
+	mulpd xmm5, xmm2
+	addpd xmm4, [tmpBy]
+	movupd [tmpBy], xmm4
+
+	////add them
+	//addpd xmm3, xmm4
+	//movapd xmm4, xmm3 //copy 
+	//shufpd xmm4, xmm3, 1h//0000 0001 reverse
+	//addpd xmm3, xmm4 //xmm3 is now to doubles with the same value
+	////We add the variable
+	//addsd xmm3, _by
+	////store it!
+	//movsd _by, xmm3
+
+	add esi, 16
+	add edi, 16
+	add ebx, 16
+	add ecx, 16
+
+	addpd xmm5, [tmpBy]
+	movupd [tmpBy], xmm5
+
+	jmp ln4_block1_opt
+
+ln4_block1_norm_entry:
+	mov eax, jsz.width
+	shl eax, 4 //Multiply by 4 to get the total number of bytes to process
+	mov edx, pi
+	add edx, eax //Limit for pi
+
+	movupd xmm1, [tmpBx]
+	movapd xmm2, xmm1
+	shufpd xmm1, xmm2, 1h//0000 0001 reverse
+	addpd xmm1, xmm2
+	movsd _bx, xmm1
+
+	movupd xmm1, [tmpBx]
+	movupd xmm3, [tmpBy]
+	movapd xmm2, xmm1
+	movapd xmm4, xmm3
+	shufpd xmm1, xmm2, 1h//0000 0001 reverse
+	shufpd xmm3, xmm4, 1h
+	addpd xmm1, xmm2
+	addpd xmm3, xmm4
+	movsd _bx, xmm1
+	movsd _by, xmm3
+
+ln4_block1_norm:
+	cmp esi, edx
+	jge ln4_block1_fin //If ecx >= edx go to normal iterations
+
+	//double t = pi[x] - pj[x];
+	mov esi, pi
+	add esi, ecx
+	movss xmm1, [esi]
+	cvtss2sd xmm1, xmm1
+	mov esi, pj
+	add esi, ecx
+	movss xmm2, [esi]
+	cvtss2sd xmm2, xmm2
+	subsd xmm1, xmm2
+	movsd xmm0, xmm1
+
+	//_bx += (double) (t * ix[x]);
+	mov esi, ix
+	add esi, ecx
+	movss xmm1, [esi]
+	cvtss2sd xmm1, xmm1
+	mulsd xmm1, xmm0
+	addsd xmm1, _bx
+	movsd _bx, xmm1
+
+	//_by += (double) (t * iy[x]);
+	mov esi, iy
+	add esi, ecx
+	movss xmm1, [esi]
+	cvtss2sd xmm1, xmm1
+	mulsd xmm1, xmm0
+	addsd xmm1, _by
+	movsd _by, xmm1
+
+	add esi, 4
+	add edi, 4
+	jmp ln4_block1_norm
+
+ln4_block1_fin:
+						}
+#else
 						__asm{
 
 							mov eax, jsz.width
@@ -597,6 +808,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 								mov edx, jsz.width
 								shl edx, 2 //Total number of bytes to process
 								mov ecx, 0h//counter. Bytes processed
+						
 ln4_lesmult_opt:
 							cmp ecx, eax
 								jge ln4_lesmult_norm //If ecx >= eax go to normal iterations
@@ -705,6 +917,7 @@ ln4_lesmult_norm:
 
 ln4_lesmult_fin:
 						}
+#endif
 #endif
 					}
 				}
