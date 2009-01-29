@@ -9,10 +9,10 @@
 #include <cstdlib>
 #include <list>
 #include <mpi.h>
-#include <omp.h>
+//#include <omp.h>
 using namespace std;
 
-#define REPEAT_ALGORITHM_FOR_CLOCK 1
+#define REPEAT_ALGORITHM_FOR_CLOCK 3
 
 struct LKPiramidResults
 {
