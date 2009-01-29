@@ -44,12 +44,14 @@
 
 //For testing purposses we define this here
 #ifndef MINGW
-#define EN_ASM_1
-#define EN_ASM_2
+//#define EN_ASM_1
+//#define EN_ASM_2
+#define EN_ASM_3_B
 //#define EN_ASM_3
+#define EN_ASM_4
 #endif
 
-#ifndef _OPENMP
+
 
 static void
 intersect_paa( CvPoint2D32f pt, CvSize win_size, CvSize imgSize,
@@ -256,13 +258,59 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 		const float* src2 = src + src_step;
 		const float* src3 = src + src_step*2;
 
+#ifdef EN_ASM_4
 		//TODO: Optimize this?
 		for( x = 0; x < src_width; x++ )
 		{
 			float t0 = (src3[x] + src[x])*smooth_k[0] + src2[x]*smooth_k[1];
 			float t1 = src3[x] - src[x];
-			buffer0[x] = t0; buffer1[x] = t1;
+			buffer0[x] = t0; 
+			buffer1[x] = t1;
 		}
+#else
+		for( x = 0; x < src_width; x+=4 )
+		{
+			__asm
+			{
+			mov eax,[x]
+			movups xmm1, src[eax]
+			movaps xmm6,xmm1
+
+			movups xmm2, src2[eax]
+			movups xmm3, src3[eax]
+
+			addps xmm1,xmm3 //(src3[x] + src[x])
+
+			movss xmm4, [smooth_k]
+			shufps xmm4,xmm4,0
+			movss xmm5, [smooth_k+4]
+			shufps xmm5,xmm5,0
+
+			mulps xmm1,xmm4 //(src3[x] + src[x])*smooth_k[0] 
+			mulps xmm2,xmm5 // src2[x]*smooth_k[1]
+			addps xmm1,xmm2;//t0<-
+			addps xmm3,xmm6//t1<-
+			
+			mov ebx,buffer0
+			add ebx,eax
+			movups [ebx],xmm1
+
+			mov ebx,buffer1
+			add ebx,eax
+			movups [ebx],xmm3
+			}			
+		}
+
+		for(; x < src_width; x++ )
+		{
+			float t0 = (src3[x] + src[x])*smooth_k[0] + src2[x]*smooth_k[1];
+			float t1 = src3[x] - src[x];
+			buffer0[x] = t0; 
+			buffer1[x] = t1;
+		}
+#endif
+
+
 
 		//TODO: Optimize this?
 		for( x = 0; x < dst_width; x++ )
@@ -952,7 +1000,7 @@ ln4_block2_fin:
 			if( l == 0 && error && pt_status ) {
 
 				/* calc error */
-				double err = 0;
+				float err = 0;
 				if( flags & CV_LKFLOW_GET_MIN_EIGENVALS ) {
 					err = minEig;
 				} else {
@@ -961,11 +1009,71 @@ ln4_block2_fin:
 
 						const float * pi = patchI + (y + minJ.y - minI.y + 1)*isz.width + minJ.x - minI.x + 1;
 						const float * pj = patchJ + y*jsz.width;
-#ifndef EN_ASM_3
+#if defined(EN_ASM_3)
 						for( x = 0; x < jsz.width; x++ ) {//LN4
 							double t = pi[x] - pj[x];
 							err += t * t;
 						}
+#elif defined(EN_ASM_3_B)
+
+		int size=jsz.width;
+		float* pjp=(float*)pj;
+		float* pip=(float*)pi;
+		float* endpi=(float*)pi+((size/8)*8);
+		float* realendpi=(float*)pi+size;
+		float zeros[]={0,0,0,0};
+		float values[4];
+								
+							__asm
+							{
+								
+
+									mov eax, [pip]
+									mov ebx, [pjp]
+									mov ecx, [endpi]
+
+									movups xmm7,[zeros]
+_loop:
+								    cmp eax,ecx
+									jge _end
+									
+									movups xmm1, [eax]
+									movups xmm2, [ebx]
+									movups xmm3, [eax+16]
+									movups xmm4, [ebx+16]
+									subps xmm1, xmm2
+									subps xmm3, xmm4
+									mulps xmm1, xmm1 
+									mulps xmm3, xmm3
+									addps xmm7, xmm1
+									add eax,32
+									addps xmm3, xmm1
+									add ebx,32
+									jmp _loop
+_end:
+
+									movups [values],xmm7								
+									mov ecx,[realendpi]
+
+_loop2:								cmp eax,ecx
+									jge _end2
+									movss xmm1,[eax]
+									movss xmm2,[ebx]
+									subss xmm1,xmm2
+									movss xmm2,err
+									addss xmm1,xmm2
+									movss [err],xmm1
+
+									add eax,4
+									add ebx,4
+									jmp _loop2
+_end2:
+									
+
+
+								}
+	err+=values[0]+values[1]+values[2]+values[3];
+						
 #else
 						__asm{
 
@@ -1055,5 +1163,5 @@ ln4_block3_fin:
 	cvFree( &_status );
 }
 
-#endif
+
 

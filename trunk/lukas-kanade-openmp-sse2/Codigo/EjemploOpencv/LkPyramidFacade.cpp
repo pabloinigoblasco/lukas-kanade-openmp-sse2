@@ -25,9 +25,11 @@ void CalcularLKPiramid(IplImage& frameA, IplImage& frameB, int windowsSize,int l
 		for(int i=0;i<numeroRepeticiones;i++)
 		{
 			c1.Start();
+			
 			cvCalcOpticalFlowPyrLK(&frameA, &frameB, pyramid1, pyramid2, outData.frameA_features, outData.frameB_features, 
-				number_of_features, optical_flow_window, level, outData.optical_flow_found_feature, outData.optical_flow_feature_error, 
-				optical_flow_termination_criteria, 0 );
+			number_of_features, optical_flow_window, level, outData.optical_flow_found_feature, outData.optical_flow_feature_error, 
+			optical_flow_termination_criteria, 0 );
+
 			c1.Stop();
 			c1.Reset();
 		}

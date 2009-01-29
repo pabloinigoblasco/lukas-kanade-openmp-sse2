@@ -25,6 +25,7 @@ int main(int argc, char **argv)
 	//TestGoodFeaturesToTrack();
 	//TrackMPI(argc,argv);
 	TrackVideo();
+	getchar();
 }
 
 
