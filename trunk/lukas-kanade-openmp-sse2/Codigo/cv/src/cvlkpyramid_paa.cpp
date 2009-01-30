@@ -282,39 +282,26 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 			__asm
 			{
 			mov eax, x
-			shl eax, 2 //Numero de bytes a desplazar
+			mov esi,src3
+			mov edi,src
 
-			mov esi, src3
-			add esi, eax
-			mov edi, src
-			add edi, eax
-			
-			movups xmm1, [esi]
-			movups xmm5, [edi]
+			movups xmm1, [esi+eax*TYPE float]
+			movups xmm5, [edi+eax*TYPE float]
 			addps xmm1, xmm5 //xmm1 is t0 but needs more calculation
 
-			movups xmm2, [esi]
-			movups xmm5, [edi]
+			movups xmm2, [esi+eax*TYPE float]			
+			mov esi,src2
 			subps xmm2, xmm5 //xmm2 is t1 and is ready to use
-
-			
 			mulps xmm1, xmm7 //(src3[x] + src[x])*smooth_k[0]
 			
-			mov edi, src2
-			add edi, eax
-			movups xmm4, [edi]
-
+			movups xmm4, [esi+eax*TYPE float]
 			mulps xmm4, xmm6
-
+			mov edi,buffer1
+			mov esi,buffer0
 			addps xmm1, xmm4 //t0 fully worked
 			
-			mov esi, buffer0
-			add esi, eax
-			movups [esi], xmm1
-
-			mov esi, buffer1
-			add esi, eax
-			movups [esi], xmm2
+			movups [edi+eax*TYPE float],xmm2
+			movups [esi+eax*TYPE float], xmm1
 			}			
 		}
 
@@ -341,33 +328,27 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 			__asm
 			{
 			mov eax, x
-			shl eax, 2 //Numero de bytes a desplazar
-
 			mov esi, buffer0
-			add esi, eax
-			movups xmm1, [esi+8]
-			movups xmm5, [esi]
-			subps xmm1, xmm5 //t0
+			mov edi, buffer1
 
-			mov esi, buffer1
-			add esi, eax
-			movups xmm2, [esi]
-			movups xmm5, [esi+8]
-			addps xmm2, xmm5 //buffer1[x] + buffer1[x+2]
+			movups xmm1, [esi+eax*TYPE float+8]
+			movups xmm5, [esi+eax*TYPE float]
+			movups xmm2, [edi+eax*TYPE float]
+			movups xmm4, [edi+eax*TYPE float+8]
+			subps xmm1, xmm5 //t0
+			addps xmm2, xmm4 //buffer1[x] + buffer1[x+2]
+
+			movups xmm5, [edi+eax*TYPE float +4]
 			mulps xmm2, xmm7 //(buffer1[x] + buffer1[x+2])*smooth_k[0]
 
-			movups xmm5, [esi+4]
-			mulps xmm5,xmm6  //buffer1[x+1]*smooth_k[1]
+			mov esi, dstX
+			mov edi, dstY
 
+			mulps xmm5,xmm6  //buffer1[x+1]*smooth_k[1]
 			addps xmm2, xmm5 //t1
 
-			mov esi, dstX
-			add esi, eax
-			movups [esi], xmm1
-
-			mov esi, dstY
-			add esi, eax
-			movups [esi], xmm2
+			movups [esi+eax*TYPE float], xmm1			
+			movups [edi+eax*TYPE float], xmm2
 			}			
 		}
 

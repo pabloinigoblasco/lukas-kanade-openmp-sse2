@@ -794,7 +794,7 @@ cvCalcOpticalFlowPyrLK_paa_omp( const void* arrA, const void* arrB,
 		CvSize levelSize = size[l];
 		int levelStep = step[l];
 
-		#pragma omp parallel for num_threads(threadCount) schedule(dynamic) 
+		#pragma omp parallel for num_threads(threadCount) schedule(static) 
 		for( i = 0; i < count; i++ ) //LN1
 		{
 			CvPoint2D32f v;
