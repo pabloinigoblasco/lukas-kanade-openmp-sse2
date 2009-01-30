@@ -282,10 +282,12 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 			add edi, eax
 			
 			movups xmm1, [esi]
-			addps xmm1, [edi] //xmm1 is t0 but needs more calculation
+			movups xmm5, [edi]
+			addps xmm1, xmm5 //xmm1 is t0 but needs more calculation
 
 			movups xmm2, [esi]
-			subps xmm2, [edi] //xmm2 is t1 and is ready to use
+			movups xmm5, [edi]
+			subps xmm2, xmm5 //xmm2 is t1 and is ready to use
 
 			mov esi, smooth_k
 			movss xmm3, [esi] //smooth_k[0]
@@ -339,12 +341,14 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 			mov esi, buffer0
 			add esi, eax
 			movups xmm1, [esi+8]
-			subps xmm1, [esi] //t0
+			movups xmm5, [esi]
+			subps xmm1, xmm5 //t0
 
 			mov esi, buffer1
 			add esi, eax
 			movups xmm2, [esi]
-			addps xmm2, [esi+8] //buffer1[x] + buffer1[x+2]
+			movups xmm5, [esi+8]
+			addps xmm2, xmm5 //buffer1[x] + buffer1[x+2]
 
 			mov edi, smooth_k
 			movss xmm3, [edi] //smooth_k[0]
@@ -354,7 +358,8 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 
 			movss xmm3, [edi+4] //smooth_k[1]
 			shufps xmm3, xmm3, 0h
-			mulps xmm3, [esi+4] //buffer1[x+1]*smooth_k[1]
+			movups xmm5, [esi+4]
+			mulps xmm3, xmm5 //buffer1[x+1]*smooth_k[1]
 
 			addps xmm2, xmm3 //t1
 
@@ -393,7 +398,7 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 	///////////////////////////////////////////////////////////
 	//Var decl and initialization
 	///////////////////////////////////////////////////////////
-
+printf("Yousonnamabith2");
 	uchar *pyrBuffer = 0;
 	uchar *buffer = 0;
 	float* _error = 0;
@@ -661,10 +666,11 @@ __asm{
 	shr eax, 3 //Divide _by 8 to get the number of iterations to optimize
 	shl eax, 5 //Multiply by 32 to get the number of bytes to process
 	mov edx, pi
-	add edx, eax //Limit for pi, it will be used as limit condition for the two
+	//Add to pi and we have the limit address to process to
+	add edx, eax //Limit for pi, it will be used as limit condition for all
 
 ln4_block1_opt:
-	cmp esi, edx //if esi<ecx
+	cmp esi, edx //if esi<edx
 	jge ln4_block1_norm_entry //go to normal iterations
 
 	//t * ix[x];
@@ -679,7 +685,8 @@ ln4_block1_opt:
 
 	//t calculation
 	movups xmm1, [esi]
-	subps xmm1, [edi]
+	movups xmm0, [edi]
+	subps xmm1, xmm0
     //t1,t2,t3,t4 in xmm1
 	
 	//Convert first 4 floats t to doubles into xmm1 and xmm2
@@ -727,7 +734,8 @@ ln4_block1_opt:
 
 	//t calculation
 	movups xmm1, [esi+16]
-	subps xmm1, [edi+16]
+	movups xmm2, [edi+16]
+	subps xmm1, xmm2
     //t5,t6,t7,t8 in xmm1
 
 	//Convert first 4 floats t to doubles into xmm1 and xmm2
