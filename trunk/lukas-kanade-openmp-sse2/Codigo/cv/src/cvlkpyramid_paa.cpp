@@ -337,10 +337,12 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 			shl eax, 2 //Numero de bytes a desplazar
 
 			mov esi, buffer0
+			add esi, eax
 			movups xmm1, [esi+8]
 			subps xmm1, [esi] //t0
 
 			mov esi, buffer1
+			add esi, eax
 			movups xmm2, [esi]
 			addps xmm2, [esi+8] //buffer1[x] + buffer1[x+2]
 
