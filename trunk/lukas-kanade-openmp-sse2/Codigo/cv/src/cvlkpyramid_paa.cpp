@@ -45,12 +45,12 @@
 
 //For testing purposses we define this here
 #ifndef MINGW
-#define EN_ASM_1
-#define EN_ASM_1b
+//#define EN_ASM_1
+//#define EN_ASM_1b
 //#define EN_ASM_2
 //#define EN_ASM_3
 //#define EN_ASM_3_B
-//#define EN_ASM_4
+#define EN_ASM_4
 #endif
 
 
@@ -260,8 +260,7 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 		const float* src2 = src + src_step;
 		const float* src3 = src + src_step*2;
 
-#ifdef EN_ASM_4
-		//TODO: Optimize this?
+#ifndef EN_ASM_4
 		for( x = 0; x < src_width; x++ )
 		{
 			float t0 = (src3[x] + src[x])*smooth_k[0] + src2[x]*smooth_k[1];
@@ -274,32 +273,41 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 		{
 			__asm
 			{
-			mov eax,[x]
-			movups xmm1, src[eax]
-			movaps xmm6,xmm1
+			mov eax, x
+			shl eax, 2 //Numero de bytes a desplazar
 
-			movups xmm2, src2[eax]
-			movups xmm3, src3[eax]
-
-			addps xmm1,xmm3 //(src3[x] + src[x])
-
-			movss xmm4, [smooth_k]
-			shufps xmm4,xmm4,0
-			movss xmm5, [smooth_k+4]
-			shufps xmm5,xmm5,0
-
-			mulps xmm1,xmm4 //(src3[x] + src[x])*smooth_k[0] 
-			mulps xmm2,xmm5 // src2[x]*smooth_k[1]
-			addps xmm1,xmm2;//t0<-
-			addps xmm3,xmm6//t1<-
+			mov esi, src3
+			add esi, eax
+			mov edi, src
+			add edi, eax
 			
-			mov ebx,buffer0
-			add ebx,eax
-			movups [ebx],xmm1
+			movups xmm1, [esi]
+			addps xmm1, [edi] //xmm1 is t0 but needs more calculation
 
-			mov ebx,buffer1
-			add ebx,eax
-			movups [ebx],xmm3
+			movups xmm2, [esi]
+			subps xmm2, [edi] //xmm2 is t1 and is ready to use
+
+			mov esi, smooth_k
+			movss xmm3, [esi] //smooth_k[0]
+			shufps xmm3, xmm3, 0h //replicate the less significative component over all the register
+			mulps xmm1, xmm3 //(src3[x] + src[x])*smooth_k[0]
+			
+			mov edi, src2
+			add edi, eax
+			movups xmm4, [edi]
+			movss xmm3, [esi+4]
+			shufps xmm3, xmm3, 0h
+			mulps xmm3, xmm4
+
+			addps xmm1, xmm3 //t0 fully worked
+			
+			mov esi, buffer0
+			add esi, eax
+			movups [esi], xmm1
+
+			mov esi, buffer1
+			add esi, eax
+			movups [esi], xmm2
 			}			
 		}
 
@@ -313,14 +321,58 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 #endif
 
 
-
-		//TODO: Optimize this?
+#ifndef EN_ASM_4
 		for( x = 0; x < dst_width; x++ )
 		{
 			float t0 = buffer0[x+2] - buffer0[x];
 			float t1 = (buffer1[x] + buffer1[x+2])*smooth_k[0] + buffer1[x+1]*smooth_k[1];
 			dstX[x] = t0; dstY[x] = t1;
 		}
+#else
+		for( x = 0; x < dst_width; x+=4 )
+		{
+			__asm
+			{
+			mov eax, x
+			shl eax, 2 //Numero de bytes a desplazar
+
+			mov esi, buffer0
+			movups xmm1, [esi+8]
+			subps xmm1, [esi] //t0
+
+			mov esi, buffer1
+			movups xmm2, [esi]
+			addps xmm2, [esi+8] //buffer1[x] + buffer1[x+2]
+
+			mov edi, smooth_k
+			movss xmm3, [edi] //smooth_k[0]
+			shufps xmm3, xmm3, 0h
+			
+			mulps xmm2, xmm3 //(buffer1[x] + buffer1[x+2])*smooth_k[0]
+
+			movss xmm3, [edi+4] //smooth_k[1]
+			shufps xmm3, xmm3, 0h
+			mulps xmm3, [esi+4] //buffer1[x+1]*smooth_k[1]
+
+			addps xmm2, xmm3 //t1
+
+			mov esi, dstX
+			add esi, eax
+			movups [esi], xmm1
+
+			mov esi, dstY
+			add esi, eax
+			movups [esi], xmm2
+			}			
+		}
+
+		for(; x < dst_width; x++ )
+		{
+			float t0 = buffer0[x+2] - buffer0[x];
+			float t1 = (buffer1[x] + buffer1[x+2])*smooth_k[0] + buffer1[x+1]*smooth_k[1];
+			dstX[x] = t0; dstY[x] = t1;
+		}
+#endif
 	}
 }
 
