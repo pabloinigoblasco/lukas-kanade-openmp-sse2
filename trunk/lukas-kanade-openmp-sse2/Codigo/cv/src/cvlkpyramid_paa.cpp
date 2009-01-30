@@ -41,15 +41,15 @@
 #include "_cv.h"
 #include <float.h>
 #include <stdio.h>
-#include <time.h>
+#include "contadorciclos.h"
 
 //For testing purposses we define this here
 #ifndef MINGW
 //#define EN_ASM_1
 //#define EN_ASM_1b
 //#define EN_ASM_2
-//#define EN_ASM_3
 //#define EN_ASM_3_B
+//#define EN_ASM_3
 #define EN_ASM_4
 #endif
 
@@ -269,6 +269,14 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 			buffer1[x] = t1;
 		}
 #else
+		__asm
+		{
+			mov edi, smooth_k
+			movss xmm7, [edi] //smooth_k[0]
+			shufps xmm7, xmm7, 0h
+			movss xmm6, [edi+4] //smooth_k[1]
+			shufps xmm6, xmm6, 0h
+		}
 		for( x = 0; x < src_width; x+=4 )
 		{
 			__asm
@@ -289,19 +297,16 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 			movups xmm5, [edi]
 			subps xmm2, xmm5 //xmm2 is t1 and is ready to use
 
-			mov esi, smooth_k
-			movss xmm3, [esi] //smooth_k[0]
-			shufps xmm3, xmm3, 0h //replicate the less significative component over all the register
-			mulps xmm1, xmm3 //(src3[x] + src[x])*smooth_k[0]
+			
+			mulps xmm1, xmm7 //(src3[x] + src[x])*smooth_k[0]
 			
 			mov edi, src2
 			add edi, eax
 			movups xmm4, [edi]
-			movss xmm3, [esi+4]
-			shufps xmm3, xmm3, 0h
-			mulps xmm3, xmm4
 
-			addps xmm1, xmm3 //t0 fully worked
+			mulps xmm4, xmm6
+
+			addps xmm1, xmm4 //t0 fully worked
 			
 			mov esi, buffer0
 			add esi, eax
@@ -349,19 +354,12 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 			movups xmm2, [esi]
 			movups xmm5, [esi+8]
 			addps xmm2, xmm5 //buffer1[x] + buffer1[x+2]
+			mulps xmm2, xmm7 //(buffer1[x] + buffer1[x+2])*smooth_k[0]
 
-			mov edi, smooth_k
-			movss xmm3, [edi] //smooth_k[0]
-			shufps xmm3, xmm3, 0h
-			
-			mulps xmm2, xmm3 //(buffer1[x] + buffer1[x+2])*smooth_k[0]
-
-			movss xmm3, [edi+4] //smooth_k[1]
-			shufps xmm3, xmm3, 0h
 			movups xmm5, [esi+4]
-			mulps xmm3, xmm5 //buffer1[x+1]*smooth_k[1]
+			mulps xmm5,xmm6  //buffer1[x+1]*smooth_k[1]
 
-			addps xmm2, xmm3 //t1
+			addps xmm2, xmm5 //t1
 
 			mov esi, dstX
 			add esi, eax
@@ -398,7 +396,19 @@ cvCalcOpticalFlowPyrLK_paa( const void* arrA, const void* arrB,
 	///////////////////////////////////////////////////////////
 	//Var decl and initialization
 	///////////////////////////////////////////////////////////
-printf("Yousonnamabith2");
+
+/*	Cronometro c,c1,c2,c3,c4,c5,c6,c7;
+	c.InhibeOutput=true;
+	c1.InhibeOutput=true;
+	c2.InhibeOutput=true;
+	c3.InhibeOutput=true;
+	c4.InhibeOutput=true;
+	c5.InhibeOutput=true;
+	c6.InhibeOutput=true;
+	c7.InhibeOutput=true;*/
+
+
+	//c.Start();
 	uchar *pyrBuffer = 0;
 	uchar *buffer = 0;
 	float* _error = 0;
@@ -508,6 +518,7 @@ printf("Yousonnamabith2");
 	bufferBytes = (srcPatchLen + patchLen * 3) * sizeof( _patchI[0][0] ) * threadCount;
 	CV_CALL( buffer = (uchar*)cvAlloc( bufferBytes ));
 
+	
 	//Some kind of buffer initiallization to give each thread a piece of these
 	//Pyramid buffer??
 	for( i = 0; i < threadCount; i++ )
@@ -524,6 +535,10 @@ printf("Yousonnamabith2");
 
 	if( !(flags & CV_LKFLOW_INITIAL_GUESSES) )
 		memcpy( featuresB, featuresA, count*sizeof(featuresA[0]));
+
+	//c.Stop();
+	//c.PrintTime("tiempo hasta inicializacion");
+	//c.Start();
 
 	///////////////////////////////////////////////////////////
 	//Image processing
@@ -558,6 +573,7 @@ printf("Yousonnamabith2");
 			float* Ix = _Ix[threadIdx];
 			float* Iy = _Iy[threadIdx];
 
+		
 			v.x = featuresB[i].x;
 			v.y = featuresB[i].y;
 			if( l < level )
@@ -593,10 +609,12 @@ printf("Yousonnamabith2");
 				status[i] = 0;
 				continue;
 			}
-
+			
 			//Calcula el gradiente de intensidad en x e y
+			//c4.Start();
 			icvCalcIxIy_32f_paa( patchI, isz.width*sizeof(patchI[0]), Ix, Iy,
 				(isz.width-2)*sizeof(patchI[0]), isz, smoothKernel, patchJ );
+			//c4.Stop();
 
 			for( j = 0; j < criteria.max_iter; j++ ) //LN2
 			{
@@ -606,7 +624,7 @@ printf("Yousonnamabith2");
 				double _bx = 0, _by = 0;
 				float mx, my;
 				CvPoint2D32f _v;
-
+				//c7.Start();
 				intersect_paa( v, winSize, levelSize, &minJ, &maxJ );
 
 				minJ.x = MAX( minJ.x, minI.x );
@@ -619,7 +637,7 @@ printf("Yousonnamabith2");
 
 				_v.x = v.x + (minJ.x - (patchSize.width - maxJ.x + 1))*0.5f;
 				_v.y = v.y + (minJ.y - (patchSize.height - maxJ.y + 1))*0.5f;
-
+				//c7.Stop();
 				if( jsz.width < 1 || jsz.height < 1 ||
 					icvGetRectSubPix_8u32f_C1R( imgJ[l], levelStep, levelSize, patchJ,
 					jsz.width*sizeof(patchJ[0]), jsz, _v ) < 0 )
@@ -632,6 +650,7 @@ printf("Yousonnamabith2");
 				if( maxJ.x == prev_maxJ.x && maxJ.y == prev_maxJ.y &&
 					minJ.x == prev_minJ.x && minJ.y == prev_minJ.y )
 				{
+					//c1.Start();
 					for( y = 0; y < jsz.height; y++ )//LN3
 					{
 						//Why it uses const???
@@ -642,12 +661,14 @@ printf("Yousonnamabith2");
 							(y + minJ.y - minI.y)*(isz.width-2) + minJ.x - minI.x;
 						float* iy = Iy + (ix - Ix);
 #ifndef EN_ASM_1
+						
 						for( x = 0; x < jsz.width; x++ )//LN4
 						{
 							double t = pi[x] - pj[x];
 							_bx += t * ix[x];
 							_by += t * iy[x];
 						}
+						
 #else
 					
 #ifdef EN_ASM_1b
@@ -982,19 +1003,24 @@ ln4_lesmult_fin:
 #endif
 #endif
 					}
+					//c1.Stop();
 				}
 				else
 				{
+					//c6.Start();
 					Gxx = Gyy = Gxy = 0;
 					for( y = 0; y < jsz.height; y++ )//LN3
 					{
+						
 						const float* pi = patchI +
 							(y + minJ.y - minI.y + 1)*isz.width + minJ.x - minI.x + 1;
 						const float* pj = patchJ + y*jsz.width;
 						const float* ix = Ix +
 							(y + minJ.y - minI.y)*(isz.width-2) + minJ.x - minI.x;
 						const float* iy = Iy + (ix - Ix);
+
 #ifndef EN_ASM_2
+						//c2.Start();
 						for( x = 0; x < jsz.width; x++ )//LN4
 						{
 							double t = pi[x] - pj[x];
@@ -1004,6 +1030,7 @@ ln4_lesmult_fin:
 							Gxy += ix[x] * iy[x];
 							Gyy += iy[x] * iy[x];
 						}
+						//c2.Stop();
 #else
 						__asm{
 
@@ -1249,7 +1276,10 @@ ln4_block2_fin:
 
 					prev_minJ = minJ;
 					prev_maxJ = maxJ;
+					//c6.Stop();
 				}
+
+				//c5.Start();
 
 				mx = (float) ((Gyy * _bx - Gxy * _by) * D);
 				my = (float) ((Gxx * _by - Gxy * _bx) * D);
@@ -1268,10 +1298,12 @@ ln4_block2_fin:
 				}
 				prev_mx = mx;
 				prev_my = my;
+				//c5.Stop();
 			}
-
+			
 			featuresB[i] = v;
 			status[i] = (char)pt_status;
+			//c3.Start();
 			if( l == 0 && error && pt_status ) {
 
 				/* calc error */
@@ -1284,7 +1316,8 @@ ln4_block2_fin:
 
 						const float * pi = patchI + (y + minJ.y - minI.y + 1)*isz.width + minJ.x - minI.x + 1;
 						const float * pj = patchJ + y*jsz.width;
-#if defined(EN_ASM_3)
+#ifndef EN_ASM_3
+						
 						for( x = 0; x < jsz.width; x++ ) {//LN4
 							double t = pi[x] - pj[x];
 							err += t * t;
@@ -1420,12 +1453,22 @@ ln4_block3_fin:
 					}
 					err = sqrt(err);
 				}
+				//c3.Stop();
 				error[i] = (float)err;
 			}
 		}
 		//************** Point processing loop End **************
 
 	} // end of pyramid levels loop (l)
+	//c.Stop();
+	/*c.PrintTime("tiempo de proceso:");
+	c1.PrintTime("Bloque 1");
+	c2.PrintTime("Bloque 2");
+	c3.PrintTime("Bloque 3");
+	c4.PrintTime("Bloque 4");
+	c5.PrintTime("Bloque 5");
+	c6.PrintTime("Bloque 6");
+	c7.PrintTime("Bloque 7");*/
 
 	__END__;
 
