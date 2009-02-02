@@ -49,6 +49,7 @@
 //#define EN_ASM_1
 //#define EN_ASM_2
 //#define EN_ASM_3
+//#define EN_ASM_4
 #endif
 
 //#ifdef _OPENMP
@@ -239,8 +240,6 @@ icvInitPyramidalAlgorithm_paa( const CvMat* imgA, const CvMat* imgB,
 
 
 
-/* compute dI/dx and dI/dy */
-/*PAA version*/
 static void
 icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, int dst_step,
 					CvSize src_size, const float* smooth_k, float* buffer0 )
@@ -257,23 +256,108 @@ icvCalcIxIy_32f_paa( const float* src, int src_step, float* dstX, float* dstY, i
 		const float* src2 = src + src_step;
 		const float* src3 = src + src_step*2;
 
-		//TODO: Optimize this?
+#ifndef EN_ASM_4
 		for( x = 0; x < src_width; x++ )
 		{
 			float t0 = (src3[x] + src[x])*smooth_k[0] + src2[x]*smooth_k[1];
 			float t1 = src3[x] - src[x];
-			buffer0[x] = t0; buffer1[x] = t1;
+			buffer0[x] = t0; 
+			buffer1[x] = t1;
+		}
+#else
+		__asm
+		{
+			mov edi, smooth_k
+			movss xmm7, [edi] //smooth_k[0]
+			shufps xmm7, xmm7, 0h
+			movss xmm6, [edi+4] //smooth_k[1]
+			shufps xmm6, xmm6, 0h
+		}
+		for( x = 0; x < src_width; x+=4 )
+		{
+			__asm
+			{
+			mov eax, x
+			mov esi,src3
+			mov edi,src
+
+			movups xmm1, [esi+eax*TYPE float]
+			movups xmm5, [edi+eax*TYPE float]
+			addps xmm1, xmm5 //xmm1 is t0 but needs more calculation
+
+			movups xmm2, [esi+eax*TYPE float]			
+			mov esi,src2
+			subps xmm2, xmm5 //xmm2 is t1 and is ready to use
+			mulps xmm1, xmm7 //(src3[x] + src[x])*smooth_k[0]
+			
+			movups xmm4, [esi+eax*TYPE float]
+			mulps xmm4, xmm6
+			mov edi,buffer1
+			mov esi,buffer0
+			addps xmm1, xmm4 //t0 fully worked
+			
+			movups [edi+eax*TYPE float],xmm2
+			movups [esi+eax*TYPE float], xmm1
+			}			
 		}
 
-		//TODO: Optimize this?
+		for(; x < src_width; x++ )
+		{
+			float t0 = (src3[x] + src[x])*smooth_k[0] + src2[x]*smooth_k[1];
+			float t1 = src3[x] - src[x];
+			buffer0[x] = t0; 
+			buffer1[x] = t1;
+		}
+#endif
+
+
+#ifndef EN_ASM_4
 		for( x = 0; x < dst_width; x++ )
 		{
 			float t0 = buffer0[x+2] - buffer0[x];
 			float t1 = (buffer1[x] + buffer1[x+2])*smooth_k[0] + buffer1[x+1]*smooth_k[1];
 			dstX[x] = t0; dstY[x] = t1;
 		}
+#else
+		for( x = 0; x < dst_width; x+=4 )
+		{
+			__asm
+			{
+			mov eax, x
+			mov esi, buffer0
+			mov edi, buffer1
+
+			movups xmm1, [esi+eax*TYPE float+8]
+			movups xmm5, [esi+eax*TYPE float]
+			movups xmm2, [edi+eax*TYPE float]
+			movups xmm4, [edi+eax*TYPE float+8]
+			subps xmm1, xmm5 //t0
+			addps xmm2, xmm4 //buffer1[x] + buffer1[x+2]
+
+			movups xmm5, [edi+eax*TYPE float +4]
+			mulps xmm2, xmm7 //(buffer1[x] + buffer1[x+2])*smooth_k[0]
+
+			mov esi, dstX
+			mov edi, dstY
+
+			mulps xmm5,xmm6  //buffer1[x+1]*smooth_k[1]
+			addps xmm2, xmm5 //t1
+
+			movups [esi+eax*TYPE float], xmm1			
+			movups [edi+eax*TYPE float], xmm2
+			}			
+		}
+
+		for(; x < dst_width; x++ )
+		{
+			float t0 = buffer0[x+2] - buffer0[x];
+			float t1 = (buffer1[x] + buffer1[x+2])*smooth_k[0] + buffer1[x+1]*smooth_k[1];
+			dstX[x] = t0; dstY[x] = t1;
+		}
+#endif
 	}
 }
+
 
 
 #ifdef EN_ASM_1
