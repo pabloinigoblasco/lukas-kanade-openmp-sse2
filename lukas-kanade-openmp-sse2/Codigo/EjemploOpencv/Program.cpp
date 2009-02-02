@@ -22,6 +22,7 @@ void TestGoodFeaturesToTrack()
 }
 int main(int argc, char **argv)
 {
+	printf("hi!");
 	//TestGoodFeaturesToTrack();
 	//TrackMPI(argc,argv);
 	TrackVideo();

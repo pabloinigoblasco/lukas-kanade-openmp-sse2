@@ -63,7 +63,6 @@ void CalcularLKPiramid(IplImage& frameA, IplImage& frameB, int windowsSize,int l
 		}
 		c3.PrintMinimumTime("");
 	}
-
 	cvReleaseImage(&pyramid1);
 	cvReleaseImage(&pyramid2);
 }

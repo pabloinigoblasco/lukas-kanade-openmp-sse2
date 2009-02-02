@@ -9,13 +9,14 @@ void TestGoodFeatures(Video& v)
 	GUI g;
 
 	int frameA=200;
+	int frame_offset=1;
 
 	g.Initialize(v.GetSize());
 
 	int tamanyoVentana=3;
 	int niveles=1;
 	int number_of_features=400;
-	int frame_offset=4;
+	
 	float quality=0.0;
 
 	IplImage *frame1_1C = NULL, *frame2_1C = NULL;
@@ -40,11 +41,11 @@ void TestGoodFeatures(Video& v)
 
 		if(k=='p')
 			tamanyoVentana+=2;
-		else if(k=='ñ')
+		else if(k=='ñ' && tamanyoVentana>1)
 			tamanyoVentana-=2;
-		else if(k=='o')
+		else if(k=='o' && niveles<7)
 			niveles+=1;
-		else if(k=='l')
+		else if(k=='l' && niveles>1)
 			niveles-=1;
 		else if(k=='i')
 			frame_offset++;

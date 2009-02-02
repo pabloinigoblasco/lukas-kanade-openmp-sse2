@@ -12,7 +12,7 @@
 //#include <omp.h>
 using namespace std;
 
-#define REPEAT_ALGORITHM_FOR_CLOCK 3
+#define REPEAT_ALGORITHM_FOR_CLOCK 1
 
 struct LKPiramidResults
 {

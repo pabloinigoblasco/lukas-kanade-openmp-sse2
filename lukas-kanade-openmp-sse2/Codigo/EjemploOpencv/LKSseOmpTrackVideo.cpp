@@ -9,8 +9,6 @@ int EjemploVideo(Video& v,algoritmo a,executionMode mode,int endFrame)
 {
 	/* Create an object that decodes the input video stream. */
 	GUI g;
-	
-
 	if(mode==executionMode::Display)
 	{
 		g.Initialize(v.GetSize());
@@ -33,7 +31,7 @@ int EjemploVideo(Video& v,algoritmo a,executionMode mode,int endFrame)
 		LKPiramidResults lkData;
 
 		//quality 0.01,distance 4
-		CalcularLKPiramid(*frame1_1C,*frame2_1C,13,7,number_of_features,a,0.001,0.4,lkData);
+		CalcularLKPiramid(*frame1_1C,*frame2_1C,15,7,number_of_features,a,0.01,0.4,lkData);
 		
 
 		if(mode==executionMode::Display)
@@ -60,6 +58,40 @@ int EjemploVideo(Video& v,algoritmo a,executionMode mode,int endFrame)
 
 void TrackVideo()
 {
+
+
+	//char filename[]="tree.avi";
+	char filename[]="Movie2B.avi";
+	Video v;
+	v.Initialize(filename);
+	int endFrame=1000;
+
+	//printf("pulse una tecla para comenzar\n");
+	//getchar();
+	Cronometro cClassic,cPaa,cPaaOmp;
+	
+	printf("Piramide clásico\n\n");
+	cClassic.Start();
+	EjemploVideo(v,algoritmo::LKpyramidalClassic,executionMode::Display,endFrame);
+	cClassic.Stop();
+	cClassic.PrintTime("Tiempo total:\n");
+/*
+	v.Restart();
+	printf("\n\nPiramide PAA optimizado sse2\n\n");
+	cPaa.Start();
+	EjemploVideo(v,algoritmo::LKpyramidalPAA,executionMode::noDisplay,endFrame);
+	cPaa.Stop();
+	cPaa.PrintTime("Tiempo total:\n");
+	
+	v.Restart();
+	printf("\n\nPiramide PAA optimizado sse2+omp\n\n");
+	cPaaOmp.Start();
+	EjemploVideo(v,algoritmo::LKpyramidalPAA_OpenMP,executionMode::noDisplay,endFrame);
+	cPaaOmp.Stop();
+	cPaaOmp.PrintTime("Tiempo total:\n");
+	*/
+}
+
 
 //		float pj[200];
 //		float pi[200];
@@ -123,34 +155,3 @@ void TrackVideo()
 //								}
 //	err+=values[0]+values[1]+values[2]+values[3];
 							
-
-	//char filename[]="tree.avi";
-	char filename[]="Movie2B.avi";
-	Video v;
-	v.Initialize(filename);
-	int endFrame=100;
-
-	//printf("pulse una tecla para comenzar\n");
-	//getchar();
-	Cronometro cClassic,cPaa,cPaaOmp;
-	
-	printf("Piramide clásico\n\n");
-	cClassic.Start();
-	EjemploVideo(v,algoritmo::LKpyramidalClassic,executionMode::noDisplay,endFrame);
-	cClassic.Stop();
-	cClassic.PrintTime("Tiempo total:\n");
-
-	v.Restart();
-	printf("\n\nPiramide PAA optimizado sse2\n\n");
-	cPaa.Start();
-	EjemploVideo(v,algoritmo::LKpyramidalPAA,executionMode::Display,endFrame);
-	cPaa.Stop();
-	cPaa.PrintTime("Tiempo total:\n");
-	
-	/*v.Restart();
-	printf("\n\nPiramide PAA optimizado sse2+omp\n\n");
-	cPaaOmp.Start();
-	EjemploVideo(v,algoritmo::LKpyramidalPAA_OpenMP,executionMode::noDisplay,endFrame);
-	cPaaOmp.Stop();
-	cPaaOmp.PrintTime("Tiempo total:\n");*/
-}

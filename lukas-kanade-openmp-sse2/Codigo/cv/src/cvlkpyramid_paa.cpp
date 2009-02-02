@@ -45,13 +45,13 @@
 
 //For testing purposses we define this here
 #ifndef MINGW
-#define EN_ASM_1
-#define EN_ASM_2
-#define EN_ASM_2_COMPLEX
+//#define EN_ASM_1
+//#define EN_ASM_2
+//#define EN_ASM_2_COMPLEX
 //#define EN_ASM_3_B
-#define EN_ASM_3
-#define EN_ASM_3_COMPLEX
-#define EN_ASM_4
+//#define EN_ASM_3
+//#define EN_ASM_3_COMPLEX
+//#define EN_ASM_4
 #endif
 
 
@@ -197,7 +197,6 @@ icvInitPyramidalAlgorithm_paa( const CvMat* imgA, const CvMat* imgB,
 		levelSize = imgSize;
 
 		/* build pyramids for both frames */
-		printf("\n%d niveles\n", level);
 		for( i = 1; i <= level; i++ )
 		{
 			int levelBytes;
